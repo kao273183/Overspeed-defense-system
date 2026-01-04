@@ -15,7 +15,7 @@
             min-height: 100vh; min-height: 100dvh; 
             display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
             touch-action: manipulation;
-            transition: background-color 0.2s; /* 加快背景切換速度 */
+            transition: background-color 0.2s;
         }
 
         /* 嚴重超速：紅色閃爍 */
@@ -23,10 +23,7 @@
             background-color: #b71c1c;
             animation: flash-red 0.5s infinite alternate;
         }
-        @keyframes flash-red {
-            from { background-color: #b71c1c; }
-            to { background-color: #ff0000; }
-        }
+        @keyframes flash-red { from { background-color: #b71c1c; } to { background-color: #ff0000; } }
 
         /* 預警模式：黃色閃爍 */
         body.warning {
@@ -35,23 +32,12 @@
         }
         body.warning #speed-display { color: #000; text-shadow: none; }
         body.warning .text-info { color: #333; }
+        @keyframes flash-yellow { from { background-color: #fbc02d; } to { background-color: #ffeb3b; } }
+
+        /* --- 介面佈局 --- */
+        .container { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 95%; height: auto; flex-grow: 1; padding: 20px 0; }
+        .dashboard { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; margin-bottom: 20px; }
         
-        @keyframes flash-yellow {
-            from { background-color: #fbc02d; } 
-            to { background-color: #ffeb3b; }   
-        }
-
-        /* --- 容器佈局 --- */
-        .container {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            width: 95%; height: auto; flex-grow: 1; padding: 20px 0;
-        }
-
-        .dashboard {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            width: 100%; margin-bottom: 20px;
-        }
-
         #speed-display {
             font-weight: bold; line-height: 1;
             text-shadow: 0 0 10px rgba(0,255,0,0.5);
@@ -59,7 +45,6 @@
             font-size: 15vh;
             transition: color 0.2s; margin-bottom: 10px;
         }
-        
         body.danger #speed-display { color: #fff; text-shadow: none; }
         .unit { font-size: 0.3em; color: #aaa; }
 
@@ -74,11 +59,7 @@
         .limit-sign.unknown { border-color: #777; color: #777; }
         .text-info { text-align: left; font-size: 0.9rem; color: #ccc; display: flex; flex-direction: column; gap: 5px; }
         
-        /* 警報門檻標籤 */
-        .threshold-badge {
-            color: #ffeb3b; border: 1px solid #555; padding: 2px 8px;
-            border-radius: 10px; background: rgba(0,0,0,0.5); display: inline-block;
-        }
+        .threshold-badge { color: #ffeb3b; border: 1px solid #555; padding: 2px 8px; border-radius: 10px; background: rgba(0,0,0,0.5); display: inline-block; }
         body.warning .threshold-badge { color: #000; border-color: #333; }
 
         /* --- 控制面板 --- */
@@ -94,11 +75,7 @@
         .input-row { display: flex; gap: 10px; margin-bottom: 15px; }
         input { flex: 1; padding: 12px; font-size: 1.1rem; border-radius: 8px; border: none; text-align: center; }
         .btn-group { display: flex; gap: 10px; margin-top: 10px; }
-        button {
-            padding: 15px; font-size: 1.1rem; border: none;
-            border-radius: 8px; cursor: pointer; font-weight: bold;
-            color: white; flex: 1; -webkit-appearance: none; 
-        }
+        button { padding: 15px; font-size: 1.1rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; flex: 1; -webkit-appearance: none; }
         #test-btn { background-color: #28a745; }
         #toggle-btn { background-color: #2979ff; }
         #toggle-btn.active { background-color: #d32f2f; }
@@ -143,10 +120,10 @@
                 <label for="auto-limit-check">OSM 自動速限</label>
             </div>
             <div class="btn-group">
-                <button id="test-btn">🔊 測試</button>
+                <button id="test-btn">🔊 測試聲音</button>
                 <button id="toggle-btn">🚀 啟動監控</button>
             </div>
-            <div id="status">準備就緒</div>
+            <div id="status">準備就緒 (WAV 強制擴音版)</div>
         </div>
     </div>
 
@@ -176,65 +153,72 @@
         
         const synth = window.speechSynthesis;
 
-        // 無聲背景音樂 loop (維持 CarPlay 通道)
+        // 1. 無聲背景音樂 (鎖定通道用)
         const silentAudio = new Audio();
         silentAudio.src = "data:audio/mp3;base64,SUQzBAAAAAABAFRYWFQAAAASAAADbWFqb3JfYnJhbmQAbXA0MgBUWFhUAAAAEQAAA21pbm9yX3ZlcnNpb24AMABUWFhUAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzb21tcDQyAFRTU0UAAAAPAAADTGF2ZjU3LjU2LjEwMAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWgAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
         silentAudio.loop = true;
         silentAudio.volume = 0.01; 
 
-        let audioCtx = null;
+        // 2. 真實音檔生成器 (解決 iOS 靜音問題)
+        function makeBeepWave() {
+            // 產生一個 0.8 秒的 WAV 檔案 Blob
+            const sampleRate = 44100;
+            const duration = 0.8; 
+            const numSamples = duration * sampleRate;
+            const buffer = new Uint8Array(44 + numSamples);
+            const view = new DataView(buffer.buffer);
+            
+            const writeString = (view, offset, string) => {
+                for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+            };
+            
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + numSamples, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); 
+            view.setUint16(22, 1, true); 
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate, true);
+            view.setUint16(32, 1, true);
+            view.setUint16(34, 8, true); 
+            writeString(view, 36, 'data');
+            view.setUint32(40, numSamples, true);
+            
+            // 產生 880Hz 方波 (Square Wave) - 這種聲音最響亮、穿透力最強
+            const frequency = 880; 
+            for (let i = 0; i < numSamples; i++) {
+                const t = i / sampleRate;
+                // 方波：大於0就是最大聲(200)，小於0就是最小聲(55)
+                const sample = (Math.sin(2 * Math.PI * frequency * t) > 0 ? 200 : 55); 
+                view.setUint8(44 + i, sample);
+            }
+            return URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
+        }
+
+        let beepPlayer = new Audio();
+        beepPlayer.src = makeBeepWave();
+        beepPlayer.volume = 1.0;
 
         updateThresholdDisplay();
 
-        function initAudio() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            silentAudio.play().catch(e => console.log("Silent Play Failed", e));
-        }
-
-        // --- 修正重點：長嗶聲 (0.8秒) ---
-        function playShortBeep() {
-            if (!audioCtx) initAudio();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            
-            // 頻率 1000Hz (標準警報音高)
-            osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
-            // 音量加大到 0.5 (避免被音樂蓋過)
-            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-            
-            osc.start();
-            // 播放時間延長至 0.8 秒 (加上 0.2 秒間隔，剛好 1 秒循環)
-            osc.stop(audioCtx.currentTime + 0.8);
-        }
-
-        // 語音前的喚醒提示音
-        function playWakeDing() {
-            if (!audioCtx) initAudio();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.1);
-            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.2);
-        }
-
+        // 測試按鈕
         testBtn.addEventListener('click', () => {
-            initAudio(); 
-            playShortBeep(); // 測試長嗶聲
+            // 必須由使用者點擊來觸發第一次播放，以解鎖 Audio Context
+            silentAudio.play().catch(()=>{});
+            
+            beepPlayer.currentTime = 0;
+            beepPlayer.play();
+
             setTimeout(() => {
                 speak(voiceTextInput.value || "音訊測試", true);
             }, 1000);
         });
 
         toggleBtn.addEventListener('click', () => {
-            initAudio(); 
+            silentAudio.play().catch(()=>{}); // 確保通道開啟
+            
             if (!isMonitoring) startMonitoring();
             else stopMonitoring();
         });
@@ -251,11 +235,7 @@
 
         // 螢幕恆亮
         async function requestWakeLock() {
-            try {
-                wakeLock = await navigator.wakeLock.request('screen');
-            } catch (err) {
-                console.warn("Wake Lock Error", err);
-            }
+            try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
         }
         document.addEventListener('visibilitychange', async () => {
             if (wakeLock !== null && document.visibilityState === 'visible') {
@@ -277,7 +257,7 @@
                 toggleBtn.classList.add('active');
                 controlsPanel.classList.add('monitoring'); 
             } else {
-                alert("瀏覽器不支援 GPS");
+                alert("不支援 GPS");
             }
         }
 
@@ -319,23 +299,29 @@
             const now = Date.now();
 
             if (currentSpeed > alarmTrigger) {
-                // 嚴重超速
+                // --- 嚴重超速：紅色 + 語音 + 前置嗶聲 ---
                 body.classList.remove('warning');
                 body.classList.add('danger');
                 
                 if (now - lastSpeakTime > 3000) { 
-                    speak(voiceTextInput.value);
+                    // 為了確保語音不被吞掉，先嗶一聲喚醒
+                    beepPlayer.currentTime = 0;
+                    beepPlayer.play();
+                    
+                    // 延遲一點點再講話
+                    setTimeout(() => speak(voiceTextInput.value), 400);
                     lastSpeakTime = now;
                 }
 
             } else if (currentSpeed > preWarningStart) {
-                // 黃色預警
+                // --- 黃色預警：黃色 + 真實音檔嗶嗶 (0.8s) ---
                 body.classList.remove('danger');
                 body.classList.add('warning');
 
                 // 每 1000ms 檢查一次
                 if (now - lastBeepTime > 1000) {
-                    playShortBeep(); // 這裡現在會播放 0.8 秒
+                    beepPlayer.currentTime = 0;
+                    beepPlayer.play().catch(e => console.error(e));
                     lastBeepTime = now;
                 }
 
@@ -349,7 +335,6 @@
             limitSourceText.textContent = "查詢中...";
             const query = `[out:json];way[maxspeed](around:20,${lat},${lon});out tags;`;
             const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
-
             try {
                 const response = await fetch(url);
                 const data = await response.json();
@@ -366,9 +351,7 @@
                     limitSourceText.textContent = "無 OSM 資料";
                     updateVisualSign(limitInput.value, false);
                 }
-            } catch (err) {
-                limitSourceText.textContent = "連線失敗";
-            }
+            } catch (err) { limitSourceText.textContent = "連線失敗"; }
         }
 
         function updateVisualSign(val, isAuto) {
@@ -387,8 +370,8 @@
             if (synth.speaking && !force) return;
             if (force) synth.cancel();
 
+            // 確保無聲音樂正在播放 (鎖定通道)
             silentAudio.play().catch(()=>{});
-            playWakeDing();
 
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'zh-TW';
@@ -398,9 +381,7 @@
                              || voices.find(v => v.lang.includes("zh"));     
             if (targetVoice) utterance.voice = targetVoice;
 
-            setTimeout(() => {
-                synth.speak(utterance);
-            }, 300);
+            synth.speak(utterance);
         }
 
         function handleError(error) {
