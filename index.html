@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GPS 測速 (含黃色預警)</title>
+    <title>防扣牌預防系統</title>
     <style>
         /* --- 全域設定 --- */
         body {
@@ -15,7 +15,7 @@
             min-height: 100vh; min-height: 100dvh; 
             display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
             touch-action: manipulation;
-            transition: background-color 0.3s; /* 背景切換動畫 */
+            transition: background-color 0.2s; /* 加快背景切換速度 */
         }
 
         /* 嚴重超速：紅色閃爍 */
@@ -28,18 +28,17 @@
             to { background-color: #ff0000; }
         }
 
-        /* 預警模式：黃色閃爍 (新功能) */
+        /* 預警模式：黃色閃爍 */
         body.warning {
             background-color: #fbc02d;
             animation: flash-yellow 0.8s infinite alternate;
         }
-        /* 預警時文字變黑，比較容易看 */
         body.warning #speed-display { color: #000; text-shadow: none; }
         body.warning .text-info { color: #333; }
         
         @keyframes flash-yellow {
-            from { background-color: #fbc02d; } /* 深黃 */
-            to { background-color: #ffeb3b; }   /* 亮黃 */
+            from { background-color: #fbc02d; } 
+            to { background-color: #ffeb3b; }   
         }
 
         /* --- 容器佈局 --- */
@@ -80,7 +79,6 @@
             color: #ffeb3b; border: 1px solid #555; padding: 2px 8px;
             border-radius: 10px; background: rgba(0,0,0,0.5); display: inline-block;
         }
-        /* 黃色預警時，標籤字變黑 */
         body.warning .threshold-badge { color: #000; border-color: #333; }
 
         /* --- 控制面板 --- */
@@ -169,12 +167,12 @@
         let watchId = null;
         let wakeLock = null;
         let lastSpeakTime = 0;
-        let lastBeepTime = 0; // 紀錄上次嗶嗶聲的時間
+        let lastBeepTime = 0; 
         let isMonitoring = false;
         let lastOsmCheckTime = 0;
         
-        const TOLERANCE = 38; // 嚴重超速門檻 (+38)
-        const PRE_WARNING_BUFFER = 5; // 預警緩衝區 (前5公里)
+        const TOLERANCE = 38; 
+        const PRE_WARNING_BUFFER = 5; 
         
         const synth = window.speechSynthesis;
 
@@ -194,7 +192,7 @@
             silentAudio.play().catch(e => console.log("Silent Play Failed", e));
         }
 
-        // 短促的嗶聲 (用於預警)
+        // --- 修正重點：長嗶聲 (0.8秒) ---
         function playShortBeep() {
             if (!audioCtx) initAudio();
             const osc = audioCtx.createOscillator();
@@ -202,16 +200,17 @@
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             
-            // 比較尖銳的聲音，模仿倒車雷達
-            osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            // 頻率 1000Hz (標準警報音高)
+            osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
+            // 音量加大到 0.5 (避免被音樂蓋過)
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
             
             osc.start();
-            // 只響 0.15 秒
-            osc.stop(audioCtx.currentTime + 0.15);
+            // 播放時間延長至 0.8 秒 (加上 0.2 秒間隔，剛好 1 秒循環)
+            osc.stop(audioCtx.currentTime + 0.8);
         }
 
-        // 提示音 (用於語音前喚醒)
+        // 語音前的喚醒提示音
         function playWakeDing() {
             if (!audioCtx) initAudio();
             const osc = audioCtx.createOscillator();
@@ -228,10 +227,10 @@
 
         testBtn.addEventListener('click', () => {
             initAudio(); 
-            playShortBeep(); // 測試嗶聲
+            playShortBeep(); // 測試長嗶聲
             setTimeout(() => {
                 speak(voiceTextInput.value || "音訊測試", true);
-            }, 500);
+            }, 1000);
         });
 
         toggleBtn.addEventListener('click', () => {
@@ -314,13 +313,13 @@
 
         function checkOverSpeed(currentSpeed) {
             const baseLimit = parseFloat(limitInput.value);
-            const alarmTrigger = baseLimit + TOLERANCE; // 110 + 38 = 148
-            const preWarningStart = alarmTrigger - PRE_WARNING_BUFFER; // 148 - 5 = 143
+            const alarmTrigger = baseLimit + TOLERANCE; 
+            const preWarningStart = alarmTrigger - PRE_WARNING_BUFFER; 
 
             const now = Date.now();
 
             if (currentSpeed > alarmTrigger) {
-                // --- 狀態 1: 嚴重超速 (紅色 + 語音) ---
+                // 嚴重超速
                 body.classList.remove('warning');
                 body.classList.add('danger');
                 
@@ -330,18 +329,17 @@
                 }
 
             } else if (currentSpeed > preWarningStart) {
-                // --- 狀態 2: 預警區 (黃色 + 嗶聲) ---
+                // 黃色預警
                 body.classList.remove('danger');
                 body.classList.add('warning');
 
-                // 每 1 秒嗶一次 (1000ms)
+                // 每 1000ms 檢查一次
                 if (now - lastBeepTime > 1000) {
-                    playShortBeep(); // 播放短促嗶聲
+                    playShortBeep(); // 這裡現在會播放 0.8 秒
                     lastBeepTime = now;
                 }
 
             } else {
-                // --- 狀態 3: 正常 ---
                 body.classList.remove('danger');
                 body.classList.remove('warning');
             }
