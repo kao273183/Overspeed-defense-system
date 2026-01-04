@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GPS 智慧測速 (可捲動版)</title>
+    <title>GPS 智慧測速 (預設50)</title>
     <style>
         /* --- 全域設定 --- */
         body {
@@ -12,23 +12,22 @@
             font-family: 'Arial', sans-serif;
             margin: 0;
             
-            /* 修正點 1: 允許垂直捲動 */
+            /* 允許垂直捲動，解決 iPhone 工具列擋住按鈕問題 */
             overflow-y: auto; 
             overflow-x: hidden;
             
-            /* 修正點 2: 使用 min-height 確保至少有螢幕高，但不限制變長 */
+            /* 確保高度至少填滿螢幕 */
             min-height: 100vh;
-            /* 針對支援 dvh 的瀏覽器 (如 iOS Safari) 優化 */
             min-height: 100dvh; 
 
             display: flex;
             flex-direction: column;
             align-items: center;
-            /* 改為 flex-start 避免捲動時上方被切掉 */
             justify-content: flex-start; 
             touch-action: manipulation;
         }
 
+        /* 危險時的閃爍動畫 */
         body.danger {
             background-color: #b71c1c;
             animation: flash 0.5s infinite alternate;
@@ -46,7 +45,6 @@
             align-items: center;
             justify-content: center;
             width: 95%;
-            /* 讓容器高度自動撐開，並保留一點上下邊距 */
             height: auto;
             flex-grow: 1; 
             padding: 20px 0;
@@ -59,7 +57,7 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            margin-bottom: 20px; /* 與下方控制區保持距離 */
+            margin-bottom: 20px;
         }
 
         #speed-display {
@@ -67,7 +65,7 @@
             line-height: 1;
             text-shadow: 0 0 10px rgba(0,255,0,0.5);
             color: #0f0;
-            font-size: 15vh; /* 稍微縮小一點字體以免太擠 */
+            font-size: 15vh; /* 動態字體大小 */
             transition: color 0.2s;
             margin-bottom: 10px;
         }
@@ -125,7 +123,6 @@
             padding: 20px;
             border-radius: 15px;
             text-align: center;
-            /* 確保底部有空間按按鈕 */
             margin-bottom: 30px; 
             transition: opacity 0.3s;
         }
@@ -135,7 +132,6 @@
 
         .input-row { display: flex; gap: 10px; margin-bottom: 15px; }
         
-        /* 讓輸入框更高一點，好按 */
         input {
             flex: 1; padding: 12px; font-size: 1.1rem;
             border-radius: 8px; border: none; text-align: center;
@@ -147,7 +143,6 @@
             padding: 15px; font-size: 1.1rem; border: none;
             border-radius: 8px; cursor: pointer; font-weight: bold;
             color: white; flex: 1;
-            /* 防止按鈕在 iPhone 上有預設樣式 */
             -webkit-appearance: none; 
         }
         #test-btn { background-color: #28a745; }
@@ -161,16 +156,15 @@
            ========================================= */
         @media (orientation: landscape) {
             body {
-                /* 橫向時通常不需要滑動，除非螢幕真的太小 */
                 overflow-y: auto; 
-                justify-content: center; /* 橫向時置中 */
+                justify-content: center; 
             }
 
             .container {
                 flex-direction: row;
                 gap: 30px;
                 padding: 10px;
-                height: 100%; /* 填滿高度 */
+                height: 100%;
             }
 
             .dashboard {
@@ -230,7 +224,7 @@
 
         <div class="controls" id="controls-panel">
             <div class="input-row">
-                <input type="number" id="limit-input" value="110" placeholder="速限">
+                <input type="number" id="limit-input" value="50" placeholder="速限">
             </div>
             <div class="input-row">
                 <input type="text" id="voice-text" value="嚴重超速！請煞車" placeholder="語音內容">
@@ -242,8 +236,8 @@
             </div>
 
             <div class="btn-group">
-                <button id="test-btn">測試語音</button>
-                <button id="toggle-btn">啟動監控</button>
+                <button id="test-btn">🔊 測試藍牙</button>
+                <button id="toggle-btn">🚀 啟動監控</button>
             </div>
             <div id="status">準備就緒</div>
         </div>
@@ -270,35 +264,69 @@
         let lastSpeakTime = 0;
         let isMonitoring = false;
         let lastOsmCheckTime = 0;
-        const TOLERANCE = 38; 
+        const TOLERANCE = 38; // 扣牌寬限值
         const synth = window.speechSynthesis;
+        let audioCtx = null;
 
-        // Init
+        // Init: 頁面載入時先更新一次警報數值
         updateThresholdDisplay();
 
-        // Events
+        // --- 藍牙音訊處理 (Web Audio API) ---
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function wakeUpBluetooth() {
+            if (!audioCtx) initAudioContext();
+            
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            // 播放極短、極小聲的頻率來喚醒音訊通道
+            oscillator.frequency.value = 100; 
+            gainNode.gain.value = 0.01; 
+            
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.1); 
+        }
+
+        // --- 事件監聽 ---
         testBtn.addEventListener('click', () => {
+            initAudioContext(); 
             speak(voiceTextInput.value || "測試", true);
         });
 
         toggleBtn.addEventListener('click', () => {
+            initAudioContext(); 
             if (!isMonitoring) startMonitoring();
             else stopMonitoring();
         });
 
+        // 當輸入框改變時，即時更新顯示
         limitInput.addEventListener('input', () => {
             updateVisualSign(limitInput.value, false);
             updateThresholdDisplay();
         });
 
-        // Functions
+        // --- 功能函式 ---
         function updateThresholdDisplay() {
             const base = parseInt(limitInput.value) || 0;
+            // 顯示 50 + 38 = 88
             alarmThresholdText.textContent = base + TOLERANCE;
         }
 
         async function startMonitoring() {
+            wakeUpBluetooth(); 
             speak("系統啟動", true);
+            
             try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
 
             if (navigator.geolocation) {
@@ -311,7 +339,7 @@
                 toggleBtn.classList.add('active');
                 controlsPanel.classList.add('monitoring'); 
             } else {
-                alert("不支援 GPS");
+                alert("瀏覽器不支援 GPS");
             }
         }
 
@@ -336,6 +364,7 @@
             statusDiv.textContent = `GPS: ±${Math.round(position.coords.accuracy)}m`;
 
             const now = Date.now();
+            // 自動 OSM 查詢 (大於10km/h 且距離上次超過15秒)
             if (autoLimitCheck.checked && (now - lastOsmCheckTime > 15000) && speedKmh > 10) {
                 fetchSpeedLimit(position.coords.latitude, position.coords.longitude);
                 lastOsmCheckTime = now;
@@ -380,7 +409,7 @@
                     }
                 } else {
                     limitSourceText.textContent = "無 OSM 資料";
-                    updateVisualSign(limitInput.value, false);
+                    updateVisualSign(limitInput.value, false); // 沒抓到就用手動值
                 }
             } catch (err) {
                 limitSourceText.textContent = "連線失敗";
@@ -402,6 +431,10 @@
         function speak(text, force = false) {
             if (synth.speaking && !force) return;
             if (force) synth.cancel();
+
+            // 1. 喚醒藍牙通道
+            wakeUpBluetooth();
+
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'zh-TW';
             utterance.rate = 1.1; 
@@ -409,7 +442,11 @@
             const targetVoice = voices.find(v => v.name.includes("Google") && v.lang.includes("zh")) 
                              || voices.find(v => v.lang.includes("zh"));     
             if (targetVoice) utterance.voice = targetVoice;
-            synth.speak(utterance);
+
+            // 2. 延遲 50ms 確保通道開啟後才發聲
+            setTimeout(() => {
+                synth.speak(utterance);
+            }, 50);
         }
 
         function handleError(error) {
