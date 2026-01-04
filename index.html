@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GPS 測速 (恆亮修復版)</title>
+    <title>GPS 測速 (含黃色預警)</title>
     <style>
         /* --- 全域設定 --- */
         body {
@@ -11,22 +11,35 @@
             color: #fff;
             font-family: 'Arial', sans-serif;
             margin: 0;
-            /* 允許捲動，避免 iPhone 工具列遮擋 */
             overflow-y: auto; overflow-x: hidden;
-            /* 確保高度 */
             min-height: 100vh; min-height: 100dvh; 
             display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
             touch-action: manipulation;
+            transition: background-color 0.3s; /* 背景切換動畫 */
         }
 
-        /* 危險閃爍 */
+        /* 嚴重超速：紅色閃爍 */
         body.danger {
             background-color: #b71c1c;
-            animation: flash 0.5s infinite alternate;
+            animation: flash-red 0.5s infinite alternate;
         }
-        @keyframes flash {
+        @keyframes flash-red {
             from { background-color: #b71c1c; }
             to { background-color: #ff0000; }
+        }
+
+        /* 預警模式：黃色閃爍 (新功能) */
+        body.warning {
+            background-color: #fbc02d;
+            animation: flash-yellow 0.8s infinite alternate;
+        }
+        /* 預警時文字變黑，比較容易看 */
+        body.warning #speed-display { color: #000; text-shadow: none; }
+        body.warning .text-info { color: #333; }
+        
+        @keyframes flash-yellow {
+            from { background-color: #fbc02d; } /* 深黃 */
+            to { background-color: #ffeb3b; }   /* 亮黃 */
         }
 
         /* --- 容器佈局 --- */
@@ -35,7 +48,6 @@
             width: 95%; height: auto; flex-grow: 1; padding: 20px 0;
         }
 
-        /* --- 儀表板 --- */
         .dashboard {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             width: 100%; margin-bottom: 20px;
@@ -45,13 +57,13 @@
             font-weight: bold; line-height: 1;
             text-shadow: 0 0 10px rgba(0,255,0,0.5);
             color: #0f0;
-            font-size: 15vh; /* 字體大 */
+            font-size: 15vh;
             transition: color 0.2s; margin-bottom: 10px;
         }
+        
         body.danger #speed-display { color: #fff; text-shadow: none; }
         .unit { font-size: 0.3em; color: #aaa; }
 
-        /* 限速牌 */
         .info-area { display: flex; align-items: center; gap: 15px; }
         .limit-sign {
             width: 100px; height: 100px; background-color: #fff;
@@ -62,10 +74,14 @@
         }
         .limit-sign.unknown { border-color: #777; color: #777; }
         .text-info { text-align: left; font-size: 0.9rem; color: #ccc; display: flex; flex-direction: column; gap: 5px; }
+        
+        /* 警報門檻標籤 */
         .threshold-badge {
             color: #ffeb3b; border: 1px solid #555; padding: 2px 8px;
             border-radius: 10px; background: rgba(0,0,0,0.5); display: inline-block;
         }
+        /* 黃色預警時，標籤字變黑 */
+        body.warning .threshold-badge { color: #000; border-color: #333; }
 
         /* --- 控制面板 --- */
         .controls {
@@ -90,7 +106,6 @@
         #toggle-btn.active { background-color: #d32f2f; }
         #status { margin-top: 10px; font-size: 0.8rem; color: #888; }
 
-        /* 橫向模式 */
         @media (orientation: landscape) {
             body { overflow-y: auto; justify-content: center; }
             .container { flex-direction: row; gap: 30px; padding: 10px; height: 100%; }
@@ -112,7 +127,7 @@
                 <div class="text-info">
                     <span id="limit-source-text" style="color:#aaa; font-size: 0.8em;">GPS 待命</span>
                     <div class="threshold-badge">
-                        警報: <span id="alarm-threshold-text">--</span>
+                        扣牌門檻: <span id="alarm-threshold-text">--</span>
                     </div>
                 </div>
             </div>
@@ -130,7 +145,7 @@
                 <label for="auto-limit-check">OSM 自動速限</label>
             </div>
             <div class="btn-group">
-                <button id="test-btn">🔊 測試音效</button>
+                <button id="test-btn">🔊 測試</button>
                 <button id="toggle-btn">🚀 啟動監控</button>
             </div>
             <div id="status">準備就緒</div>
@@ -154,12 +169,16 @@
         let watchId = null;
         let wakeLock = null;
         let lastSpeakTime = 0;
+        let lastBeepTime = 0; // 紀錄上次嗶嗶聲的時間
         let isMonitoring = false;
         let lastOsmCheckTime = 0;
-        const TOLERANCE = 38; 
+        
+        const TOLERANCE = 38; // 嚴重超速門檻 (+38)
+        const PRE_WARNING_BUFFER = 5; // 預警緩衝區 (前5公里)
+        
         const synth = window.speechSynthesis;
 
-        // 1. 無聲背景音樂 (Silent Loop) - 解決 CarPlay 路由
+        // 無聲背景音樂 loop (維持 CarPlay 通道)
         const silentAudio = new Audio();
         silentAudio.src = "data:audio/mp3;base64,SUQzBAAAAAABAFRYWFQAAAASAAADbWFqb3JfYnJhbmQAbXA0MgBUWFhUAAAAEQAAA21pbm9yX3ZlcnNpb24AMABUWFhUAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzb21tcDQyAFRTU0UAAAAPAAADTGF2ZjU3LjU2LjEwMAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWgAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
         silentAudio.loop = true;
@@ -172,28 +191,47 @@
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            silentAudio.play().catch(e => console.log("Audio Play Failed", e));
+            silentAudio.play().catch(e => console.log("Silent Play Failed", e));
         }
 
-        function playDing() {
+        // 短促的嗶聲 (用於預警)
+        function playShortBeep() {
             if (!audioCtx) initAudio();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             
+            // 比較尖銳的聲音，模仿倒車雷達
+            osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            
+            osc.start();
+            // 只響 0.15 秒
+            osc.stop(audioCtx.currentTime + 0.15);
+        }
+
+        // 提示音 (用於語音前喚醒)
+        function playWakeDing() {
+            if (!audioCtx) initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
             osc.frequency.setValueAtTime(880, audioCtx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.1);
             gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-            
             osc.start();
             osc.stop(audioCtx.currentTime + 0.2);
         }
 
         testBtn.addEventListener('click', () => {
             initAudio(); 
-            speak(voiceTextInput.value || "音訊測試", true);
+            playShortBeep(); // 測試嗶聲
+            setTimeout(() => {
+                speak(voiceTextInput.value || "音訊測試", true);
+            }, 500);
         });
 
         toggleBtn.addEventListener('click', () => {
@@ -212,33 +250,22 @@
             alarmThresholdText.textContent = base + TOLERANCE;
         }
 
-        // --- 核心修正：螢幕恆亮保護機制 ---
+        // 螢幕恆亮
         async function requestWakeLock() {
             try {
                 wakeLock = await navigator.wakeLock.request('screen');
-                console.log("螢幕恆亮已鎖定");
-                
-                // 監聽釋放事件 (除錯用)
-                wakeLock.addEventListener('release', () => {
-                    console.log("螢幕恆亮已釋放");
-                });
             } catch (err) {
-                console.warn(`螢幕恆亮失敗: ${err.name}, ${err.message}`);
+                console.warn("Wake Lock Error", err);
             }
         }
-
-        // 當網頁重新回到前景時，強制重新抓取鎖定
         document.addEventListener('visibilitychange', async () => {
             if (wakeLock !== null && document.visibilityState === 'visible') {
-                console.log("網頁回到前景，重新鎖定螢幕");
                 await requestWakeLock();
             }
         });
 
         async function startMonitoring() {
             speak("監控啟動", true);
-            
-            // 請求螢幕恆亮
             await requestWakeLock();
 
             if (navigator.geolocation) {
@@ -257,20 +284,15 @@
 
         function stopMonitoring() {
             if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-            
-            // 釋放螢幕鎖定
-            if (wakeLock !== null) {
-                wakeLock.release().then(() => wakeLock = null);
-            }
-            
+            if (wakeLock !== null) wakeLock.release();
             silentAudio.pause();
-
             isMonitoring = false;
             toggleBtn.textContent = "啟動監控";
             toggleBtn.classList.remove('active');
             controlsPanel.classList.remove('monitoring');
             speedDisplay.innerHTML = `0<span class="unit"></span>`;
             body.classList.remove('danger');
+            body.classList.remove('warning');
             statusDiv.textContent = "已暫停";
         }
 
@@ -292,17 +314,36 @@
 
         function checkOverSpeed(currentSpeed) {
             const baseLimit = parseFloat(limitInput.value);
-            const alarmTrigger = baseLimit + TOLERANCE; 
+            const alarmTrigger = baseLimit + TOLERANCE; // 110 + 38 = 148
+            const preWarningStart = alarmTrigger - PRE_WARNING_BUFFER; // 148 - 5 = 143
+
+            const now = Date.now();
 
             if (currentSpeed > alarmTrigger) {
+                // --- 狀態 1: 嚴重超速 (紅色 + 語音) ---
+                body.classList.remove('warning');
                 body.classList.add('danger');
-                const now = Date.now();
+                
                 if (now - lastSpeakTime > 3000) { 
                     speak(voiceTextInput.value);
                     lastSpeakTime = now;
                 }
-            } else {
+
+            } else if (currentSpeed > preWarningStart) {
+                // --- 狀態 2: 預警區 (黃色 + 嗶聲) ---
                 body.classList.remove('danger');
+                body.classList.add('warning');
+
+                // 每 1 秒嗶一次 (1000ms)
+                if (now - lastBeepTime > 1000) {
+                    playShortBeep(); // 播放短促嗶聲
+                    lastBeepTime = now;
+                }
+
+            } else {
+                // --- 狀態 3: 正常 ---
+                body.classList.remove('danger');
+                body.classList.remove('warning');
             }
         }
 
@@ -348,10 +389,8 @@
             if (synth.speaking && !force) return;
             if (force) synth.cancel();
 
-            // 確保無聲音樂正在播放 (鎖定 CarPlay 媒體通道)
             silentAudio.play().catch(()=>{});
-            
-            playDing();
+            playWakeDing();
 
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'zh-TW';
@@ -375,4 +414,3 @@
     </script>
 </body>
 </html>
-
