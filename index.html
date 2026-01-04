@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GPS 測速 (穩定版)</title>
+    <title>GPS 測速 (CarPlay完美版)</title>
     <style>
         /* --- 全域設定 --- */
         body {
@@ -11,18 +11,19 @@
             color: #fff;
             font-family: 'Arial', sans-serif;
             margin: 0;
+            /* 允許捲動，避免 iPhone 工具列遮擋 */
             overflow-y: auto; overflow-x: hidden;
-            min-height: 100vh; min-height: 100dvh;
+            /* 確保高度 */
+            min-height: 100vh; min-height: 100dvh; 
             display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
             touch-action: manipulation;
         }
 
-        /* 危險時的閃爍動畫 */
+        /* 危險閃爍 */
         body.danger {
             background-color: #b71c1c;
             animation: flash 0.5s infinite alternate;
         }
-
         @keyframes flash {
             from { background-color: #b71c1c; }
             to { background-color: #ff0000; }
@@ -30,167 +31,74 @@
 
         /* --- 容器佈局 --- */
         .container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 95%;
-            height: auto;
-            flex-grow: 1; 
-            padding: 20px 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 95%; height: auto; flex-grow: 1; padding: 20px 0;
         }
 
-        /* --- 儀表板區域 --- */
+        /* --- 儀表板 --- */
         .dashboard {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            margin-bottom: 20px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 100%; margin-bottom: 20px;
         }
 
         #speed-display {
-            font-weight: bold;
-            line-height: 1;
+            font-weight: bold; line-height: 1;
             text-shadow: 0 0 10px rgba(0,255,0,0.5);
             color: #0f0;
-            font-size: 15vh; /* 動態字體大小 */
-            transition: color 0.2s;
-            margin-bottom: 10px;
+            font-size: 15vh; /* 字體大 */
+            transition: color 0.2s; margin-bottom: 10px;
         }
-        
         body.danger #speed-display { color: #fff; text-shadow: none; }
         .unit { font-size: 0.3em; color: #aaa; }
 
-        /* 限速牌與資訊 */
-        .info-area {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
+        /* 限速牌 */
+        .info-area { display: flex; align-items: center; gap: 15px; }
         .limit-sign {
-            width: 100px;
-            height: 100px;
-            background-color: #fff;
-            border: 8px solid #cc0000;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #000;
-            font-weight: bold;
-            font-size: 40px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.5);
-            flex-shrink: 0;
+            width: 100px; height: 100px; background-color: #fff;
+            border: 8px solid #cc0000; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            color: #000; font-weight: bold; font-size: 40px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5); flex-shrink: 0;
         }
         .limit-sign.unknown { border-color: #777; color: #777; }
-
-        .text-info {
-            text-align: left;
-            font-size: 0.9rem;
-            color: #ccc;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
+        .text-info { text-align: left; font-size: 0.9rem; color: #ccc; display: flex; flex-direction: column; gap: 5px; }
         .threshold-badge {
-            color: #ffeb3b;
-            border: 1px solid #555;
-            padding: 2px 8px;
-            border-radius: 10px;
-            background: rgba(0,0,0,0.5);
-            display: inline-block;
+            color: #ffeb3b; border: 1px solid #555; padding: 2px 8px;
+            border-radius: 10px; background: rgba(0,0,0,0.5); display: inline-block;
         }
 
-        /* --- 控制面板區域 --- */
+        /* --- 控制面板 --- */
         .controls {
-            width: 100%;
-            max-width: 400px;
+            width: 100%; max-width: 400px;
             background: rgba(30, 30, 30, 0.8);
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            margin-bottom: 30px; 
-            transition: opacity 0.3s;
+            padding: 20px; border-radius: 15px; text-align: center;
+            margin-bottom: 30px; transition: opacity 0.3s;
         }
-
         .controls.monitoring { opacity: 0.3; }
         .controls.monitoring:hover { opacity: 1; }
 
         .input-row { display: flex; gap: 10px; margin-bottom: 15px; }
-        
-        input {
-            flex: 1; padding: 12px; font-size: 1.1rem;
-            border-radius: 8px; border: none; text-align: center;
-        }
-        
+        input { flex: 1; padding: 12px; font-size: 1.1rem; border-radius: 8px; border: none; text-align: center; }
         .btn-group { display: flex; gap: 10px; margin-top: 10px; }
-        
         button {
             padding: 15px; font-size: 1.1rem; border: none;
             border-radius: 8px; cursor: pointer; font-weight: bold;
-            color: white; flex: 1;
-            -webkit-appearance: none; 
+            color: white; flex: 1; -webkit-appearance: none; 
         }
         #test-btn { background-color: #28a745; }
         #toggle-btn { background-color: #2979ff; }
         #toggle-btn.active { background-color: #d32f2f; }
-        
         #status { margin-top: 10px; font-size: 0.8rem; color: #888; }
 
-        /* =========================================
-           🚀 橫向模式 (Landscape)
-           ========================================= */
+        /* 橫向模式 */
         @media (orientation: landscape) {
-            body {
-                overflow-y: auto; 
-                justify-content: center; 
-            }
-
-            .container {
-                flex-direction: row;
-                gap: 30px;
-                padding: 10px;
-                height: 100%;
-            }
-
-            .dashboard {
-                flex: 2; 
-                flex-direction: row;
-                justify-content: center;
-                gap: 40px;
-                margin-bottom: 0;
-            }
-
-            #speed-display {
-                font-size: 35vh; 
-                order: 1;
-                margin-bottom: 0;
-            }
-
-            .info-area {
-                flex-direction: column;
-                order: 2;
-                align-items: center;
-            }
-
-            .limit-sign {
-                width: 18vh; height: 18vh;
-                font-size: 7vh; border-width: 1.2vh;
-            }
-
-            .controls {
-                flex: 1;
-                max-width: 320px;
-                margin-bottom: 0;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                padding: 15px;
-            }
+            body { overflow-y: auto; justify-content: center; }
+            .container { flex-direction: row; gap: 30px; padding: 10px; height: 100%; }
+            .dashboard { flex: 2; flex-direction: row; justify-content: center; gap: 40px; margin-bottom: 0; }
+            #speed-display { font-size: 35vh; order: 1; margin-bottom: 0; }
+            .info-area { flex-direction: column; order: 2; align-items: center; }
+            .limit-sign { width: 18vh; height: 18vh; font-size: 7vh; border-width: 1.2vh; }
+            .controls { flex: 1; max-width: 320px; margin-bottom: 0; display: flex; flex-direction: column; justify-content: center; padding: 15px; }
         }
     </style>
 </head>
@@ -199,10 +107,8 @@
     <div class="container">
         <div class="dashboard">
             <div id="speed-display">0<span class="unit"></span></div>
-
             <div class="info-area">
                 <div id="visual-limit" class="limit-sign unknown">--</div>
-                
                 <div class="text-info">
                     <span id="limit-source-text" style="color:#aaa; font-size: 0.8em;">GPS 待命</span>
                     <div class="threshold-badge">
@@ -219,14 +125,12 @@
             <div class="input-row">
                 <input type="text" id="voice-text" value="嚴重超速！請煞車" placeholder="語音內容">
             </div>
-            
             <div style="font-size: 0.9rem; text-align: left; margin-bottom: 10px;">
                 <input type="checkbox" id="auto-limit-check" checked style="width: auto; flex: none;"> 
                 <label for="auto-limit-check">OSM 自動速限</label>
             </div>
-
             <div class="btn-group">
-                <button id="test-btn">🎵 測試音訊</button>
+                <button id="test-btn">🔊 測試音效</button>
                 <button id="toggle-btn">🚀 啟動監控</button>
             </div>
             <div id="status">準備就緒</div>
@@ -234,7 +138,6 @@
     </div>
 
     <script>
-        // DOM Elements
         const speedDisplay = document.getElementById('speed-display');
         const limitInput = document.getElementById('limit-input');
         const visualLimit = document.getElementById('visual-limit');
@@ -248,59 +151,67 @@
         const controlsPanel = document.getElementById('controls-panel');
         const body = document.body;
 
-        // Variables
         let watchId = null;
         let wakeLock = null;
         let lastSpeakTime = 0;
         let isMonitoring = false;
         let lastOsmCheckTime = 0;
-        const TOLERANCE = 38; // 寬限值
+        const TOLERANCE = 38; 
         const synth = window.speechSynthesis;
+
+        // --- 核心技術：音訊路由強制修正 ---
+        
+        // 1. 無聲背景音樂 (Silent Loop)
+        // 作用：讓 iPhone 認為「現在正在播放音樂」，因此把音訊通道強制切給 CarPlay
+        const silentAudio = new Audio();
+        silentAudio.src = "data:audio/mp3;base64,SUQzBAAAAAABAFRYWFQAAAASAAADbWFqb3JfYnJhbmQAbXA0MgBUWFhUAAAAEQAAA21pbm9yX3ZlcnNpb24AMABUWFhUAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzb21tcDQyAFRTU0UAAAAPAAADTGF2ZjU3LjU2LjEwMAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWgAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
+        silentAudio.loop = true;
+        silentAudio.volume = 0.01; // 必須有點音量，不然系統會當作靜音處理
+
+        // 2. 提示音 (Beep)
+        // 作用：語音播放前的「叮」聲，用來喚醒喇叭
         let audioCtx = null;
 
-        // Init
         updateThresholdDisplay();
 
-        // 1. 初始化音訊環境
-        function initAudioContext() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            // 關鍵：播放無聲音樂，霸佔通道
+            silentAudio.play().then(() => {
+                console.log("Audio Channel Secured");
+            }).catch(e => console.log("Audio Play Failed", e));
         }
 
-        // 2. 播放喚醒音 (Ding) - 這是解決藍牙/CarPlay 吃字的關鍵
-        function playWakeUpTone() {
-            if (!audioCtx) initAudioContext();
+        // 產生「叮」聲
+        function playDing() {
+            if (!audioCtx) initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
             
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
+            // 880Hz (A5) 提示音
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.1);
             
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
+            // 音量控制
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
             
-            // 產生一個清脆的提示音
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); 
-            oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.1);
-            
-            gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-            
-            oscillator.start();
-            oscillator.stop(audioCtx.currentTime + 0.15);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.2);
         }
 
-        // --- 事件監聽 ---
+        // --- 事件綁定 ---
         testBtn.addEventListener('click', () => {
-            initAudioContext(); 
-            speak(voiceTextInput.value || "測試", true);
+            initAudio(); // 確保通道開啟
+            speak(voiceTextInput.value || "音訊測試", true);
         });
 
         toggleBtn.addEventListener('click', () => {
-            initAudioContext(); 
+            initAudio(); // 確保通道開啟
             if (!isMonitoring) startMonitoring();
             else stopMonitoring();
         });
@@ -310,15 +221,13 @@
             updateThresholdDisplay();
         });
 
-        // --- 主邏輯 ---
         function updateThresholdDisplay() {
             const base = parseInt(limitInput.value) || 0;
             alarmThresholdText.textContent = base + TOLERANCE;
         }
 
         async function startMonitoring() {
-            speak("監控啟動", true); // 播報一次，確認音訊通道建立
-            
+            speak("監控啟動", true);
             try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
 
             if (navigator.geolocation) {
@@ -338,6 +247,10 @@
         function stopMonitoring() {
             if (watchId !== null) navigator.geolocation.clearWatch(watchId);
             if (wakeLock !== null) wakeLock.release();
+            
+            // 停止無聲音樂，釋放通道
+            silentAudio.pause();
+
             isMonitoring = false;
             toggleBtn.textContent = "啟動監控";
             toggleBtn.classList.remove('active');
@@ -360,7 +273,6 @@
                 fetchSpeedLimit(position.coords.latitude, position.coords.longitude);
                 lastOsmCheckTime = now;
             }
-
             checkOverSpeed(speedKmh);
         }
 
@@ -371,7 +283,7 @@
             if (currentSpeed > alarmTrigger) {
                 body.classList.add('danger');
                 const now = Date.now();
-                if (now - lastSpeakTime > 3000) {
+                if (now - lastSpeakTime > 3000) { 
                     speak(voiceTextInput.value);
                     lastSpeakTime = now;
                 }
@@ -392,7 +304,6 @@
                     let maxspeed = data.elements[0].tags.maxspeed;
                     let limitNumber = parseInt(maxspeed);
                     if (maxspeed.includes("mph")) limitNumber = Math.round(limitNumber * 1.609);
-
                     if (!isNaN(limitNumber)) {
                         limitInput.value = limitNumber; 
                         updateVisualSign(limitNumber, true);
@@ -423,8 +334,11 @@
             if (synth.speaking && !force) return;
             if (force) synth.cancel();
 
-            // 1. 播放喚醒音搶佔通道
-            playWakeUpTone();
+            // 1. 確保無聲音樂正在播放 (鎖定 CarPlay 媒體通道)
+            silentAudio.play().catch(()=>{});
+            
+            // 2. 播放提示音 (叮!)
+            playDing();
 
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'zh-TW';
@@ -434,10 +348,10 @@
                              || voices.find(v => v.lang.includes("zh"));     
             if (targetVoice) utterance.voice = targetVoice;
 
-            // 2. 延遲 400ms，等待車機音樂變小聲後才發話
+            // 3. 延遲 300ms 讓通道穩定後發話
             setTimeout(() => {
                 synth.speak(utterance);
-            }, 400);
+            }, 300);
         }
 
         function handleError(error) {
