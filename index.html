@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>防扣牌系統 (自訂音效版)</title>
+    <title>防扣牌系統 (啟動提示版)</title>
     <style>
         /* --- 全域設定 --- */
         body {
@@ -135,14 +135,14 @@
             </div>
             
             <div class="input-group">
-                <label>嚴重超速時的語音內容 (TTS)</label>
+                <label>嚴重超速語音 (TTS)</label>
                 <input type="text" id="voice-text" value="嚴重超速！請煞車">
             </div>
 
             <div class="input-group">
-                <label>警示音效檔案 (預設讀取 sound.mp3)</label>
+                <label>警示音效 (預設 sound.mp3)</label>
                 <div class="file-upload">
-                    <div class="file-btn" id="file-label">📂 點此更換音效 (如有需要)</div>
+                    <div class="file-btn" id="file-label">📂 選擇音效 (預設: sound.mp3)</div>
                     <input type="file" id="sound-upload" accept="audio/*">
                 </div>
             </div>
@@ -153,8 +153,8 @@
             </div>
             
             <div class="btn-group">
-                <button id="test-file-btn">🔊 測音效</button>
-                <button id="test-tts-btn">🗣️ 測語音</button>
+                <button id="test-file-btn">🔊 音效</button>
+                <button id="test-tts-btn">🗣️ 語音</button>
             </div>
             <div class="btn-group">
                 <button id="toggle-btn">🚀 啟動監控</button>
@@ -170,9 +170,11 @@
         const visualLimit = document.getElementById('visual-limit');
         const limitSourceText = document.getElementById('limit-source-text');
         const alarmThresholdText = document.getElementById('alarm-threshold-text');
+        
         const voiceTextInput = document.getElementById('voice-text');
         const soundUpload = document.getElementById('sound-upload');
         const fileLabel = document.getElementById('file-label');
+
         const toggleBtn = document.getElementById('toggle-btn');
         const testFileBtn = document.getElementById('test-file-btn');
         const testTtsBtn = document.getElementById('test-tts-btn');
@@ -193,18 +195,16 @@
         
         const synth = window.speechSynthesis;
 
-        // 1. 無聲背景音樂 (維持 CarPlay 通道用)
+        // 1. 無聲背景 (CarPlay Keep Alive)
         const silentAudio = new Audio();
         silentAudio.src = "data:audio/mp3;base64,SUQzBAAAAAABAFRYWFQAAAASAAADbWFqb3JfYnJhbmQAbXA0MgBUWFhUAAAAEQAAA21pbm9yX3ZlcnNpb24AMABUWFhUAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzb21tcDQyAFRTU0UAAAAPAAADTGF2ZjU3LjU2LjEwMAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWgAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
         silentAudio.loop = true;
         silentAudio.volume = 0.01; 
 
-        // 2. 警報音效播放器
+        // 2. 警報音效
         let beepAudio = new Audio();
-        // 預設尋找 sound.mp3
         const DEFAULT_SOUND_PATH = './sound.mp3';
 
-        // 備用嗶嗶聲 (如果找不到 sound.mp3 時使用)
         function makeDefaultBeep() {
             const sampleRate = 44100;
             const duration = 0.5; 
@@ -222,21 +222,15 @@
             return URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
         }
 
-        // 初始化：嘗試載入 sound.mp3
         function initSound() {
             beepAudio.src = DEFAULT_SOUND_PATH;
-            
-            // 監聽錯誤：如果找不到 sound.mp3，就切換回備用電子音
             beepAudio.onerror = function() {
-                console.log("找不到 sound.mp3，切換為備用電子音");
-                fileLabel.textContent = "⚠️ 未偵測到 sound.mp3 (使用預設音)";
+                console.log("切換為預設電子音");
+                fileLabel.textContent = "⚠️ 無 sound.mp3 (用預設音)";
                 beepAudio.src = makeDefaultBeep();
             };
-
-            // 如果成功載入
             beepAudio.oncanplaythrough = function() {
-                console.log("sound.mp3 載入成功");
-                fileLabel.textContent = "✅ 已載入預設音效 (sound.mp3)";
+                fileLabel.textContent = "✅ 已載入 sound.mp3";
                 fileLabel.style.borderColor = "#28a745";
             };
         }
@@ -244,17 +238,15 @@
 
         updateThresholdDisplay();
 
-        // --- 檔案上傳處理 (手動覆蓋) ---
+        // 檔案上傳
         soundUpload.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
                 const objectUrl = URL.createObjectURL(file);
                 beepAudio.src = objectUrl;
-                // 移除錯誤監聽，因為這是使用者手選的，應該是有效的
                 beepAudio.onerror = null; 
-                fileLabel.textContent = `📂 手動選取: ${file.name}`;
+                fileLabel.textContent = `📂 使用: ${file.name}`;
                 fileLabel.style.backgroundColor = "#28a745";
-                
                 playCustomSound();
             }
         });
@@ -264,7 +256,7 @@
             beepAudio.play().catch(e => console.log("Sound error", e));
         }
 
-        // --- 按鈕事件 ---
+        // --- 按鈕 ---
         testFileBtn.addEventListener('click', () => {
             silentAudio.play().catch(()=>{}); 
             playCustomSound();
@@ -275,9 +267,7 @@
         testTtsBtn.addEventListener('click', () => {
             silentAudio.play().catch(()=>{});
             playCustomSound();
-            setTimeout(() => {
-                speak(voiceTextInput.value || "測試語音");
-            }, 1000); // 這裡延遲稍微久一點，讓音效播完
+            setTimeout(() => { speak(voiceTextInput.value || "測試語音"); }, 1000);
             statusDiv.textContent = "🗣️ 播放語音...";
             setTimeout(() => statusDiv.textContent = "準備就緒", 2000);
         });
@@ -302,13 +292,21 @@
             try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
         }
         document.addEventListener('visibilitychange', async () => {
-            if (wakeLock !== null && document.visibilityState === 'visible') {
-                await requestWakeLock();
-            }
+            if (wakeLock !== null && document.visibilityState === 'visible') { await requestWakeLock(); }
         });
 
         async function startMonitoring() {
-            playCustomSound(); 
+            // 1. 確保音訊通道開啟
+            silentAudio.play().catch(()=>{});
+            
+            // 2. 播放一聲警示音 (喚醒 CarPlay)
+            playCustomSound();
+            
+            // 3. 延遲 0.8秒後，語音播報「偵測開始」
+            setTimeout(() => {
+                speak("偵測開始");
+            }, 800);
+
             await requestWakeLock();
 
             if (navigator.geolocation) {
@@ -363,27 +361,20 @@
             const now = Date.now();
 
             if (currentSpeed > alarmTrigger) {
-                // 紅色：嚴重超速
                 body.classList.remove('warning');
                 body.classList.add('danger');
-                
                 if (now - lastSpeakTime > 3000) { 
                     playCustomSound(); 
-                    // 延遲 1 秒後說話，避免跟音效重疊
                     setTimeout(() => speak(voiceTextInput.value), 1000);
                     lastSpeakTime = now;
                 }
-
             } else if (currentSpeed > preWarningStart) {
-                // 黃色：預警區
                 body.classList.remove('danger');
                 body.classList.add('warning');
-
                 if (now - lastBeepTime > 1000) {
                     playCustomSound(); 
                     lastBeepTime = now;
                 }
-
             } else {
                 body.classList.remove('danger');
                 body.classList.remove('warning');
@@ -391,9 +382,11 @@
         }
 
         async function fetchSpeedLimit(lat, lon) {
-            limitSourceText.textContent = "查詢中...";
+            limitSourceText.textContent = "更新中...";
+            // 只查詢速限，移除測速照相
             const query = `[out:json];way[maxspeed](around:20,${lat},${lon});out tags;`;
             const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+
             try {
                 const response = await fetch(url);
                 const data = await response.json();
