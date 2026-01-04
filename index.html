@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GPS 測速 (CarPlay完美版)</title>
+    <title>GPS 測速 (恆亮修復版)</title>
     <style>
         /* --- 全域設定 --- */
         body {
@@ -159,17 +159,12 @@
         const TOLERANCE = 38; 
         const synth = window.speechSynthesis;
 
-        // --- 核心技術：音訊路由強制修正 ---
-        
-        // 1. 無聲背景音樂 (Silent Loop)
-        // 作用：讓 iPhone 認為「現在正在播放音樂」，因此把音訊通道強制切給 CarPlay
+        // 1. 無聲背景音樂 (Silent Loop) - 解決 CarPlay 路由
         const silentAudio = new Audio();
         silentAudio.src = "data:audio/mp3;base64,SUQzBAAAAAABAFRYWFQAAAASAAADbWFqb3JfYnJhbmQAbXA0MgBUWFhUAAAAEQAAA21pbm9yX3ZlcnNpb24AMABUWFhUAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzb21tcDQyAFRTU0UAAAAPAAADTGF2ZjU3LjU2LjEwMAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWgAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
         silentAudio.loop = true;
-        silentAudio.volume = 0.01; // 必須有點音量，不然系統會當作靜音處理
+        silentAudio.volume = 0.01; 
 
-        // 2. 提示音 (Beep)
-        // 作用：語音播放前的「叮」聲，用來喚醒喇叭
         let audioCtx = null;
 
         updateThresholdDisplay();
@@ -177,14 +172,9 @@
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
-
-            // 關鍵：播放無聲音樂，霸佔通道
-            silentAudio.play().then(() => {
-                console.log("Audio Channel Secured");
-            }).catch(e => console.log("Audio Play Failed", e));
+            silentAudio.play().catch(e => console.log("Audio Play Failed", e));
         }
 
-        // 產生「叮」聲
         function playDing() {
             if (!audioCtx) initAudio();
             const osc = audioCtx.createOscillator();
@@ -192,11 +182,8 @@
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             
-            // 880Hz (A5) 提示音
             osc.frequency.setValueAtTime(880, audioCtx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.1);
-            
-            // 音量控制
             gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
             
@@ -204,14 +191,13 @@
             osc.stop(audioCtx.currentTime + 0.2);
         }
 
-        // --- 事件綁定 ---
         testBtn.addEventListener('click', () => {
-            initAudio(); // 確保通道開啟
+            initAudio(); 
             speak(voiceTextInput.value || "音訊測試", true);
         });
 
         toggleBtn.addEventListener('click', () => {
-            initAudio(); // 確保通道開啟
+            initAudio(); 
             if (!isMonitoring) startMonitoring();
             else stopMonitoring();
         });
@@ -226,9 +212,34 @@
             alarmThresholdText.textContent = base + TOLERANCE;
         }
 
+        // --- 核心修正：螢幕恆亮保護機制 ---
+        async function requestWakeLock() {
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+                console.log("螢幕恆亮已鎖定");
+                
+                // 監聽釋放事件 (除錯用)
+                wakeLock.addEventListener('release', () => {
+                    console.log("螢幕恆亮已釋放");
+                });
+            } catch (err) {
+                console.warn(`螢幕恆亮失敗: ${err.name}, ${err.message}`);
+            }
+        }
+
+        // 當網頁重新回到前景時，強制重新抓取鎖定
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                console.log("網頁回到前景，重新鎖定螢幕");
+                await requestWakeLock();
+            }
+        });
+
         async function startMonitoring() {
             speak("監控啟動", true);
-            try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+            
+            // 請求螢幕恆亮
+            await requestWakeLock();
 
             if (navigator.geolocation) {
                 statusDiv.textContent = "定位中...";
@@ -246,9 +257,12 @@
 
         function stopMonitoring() {
             if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-            if (wakeLock !== null) wakeLock.release();
             
-            // 停止無聲音樂，釋放通道
+            // 釋放螢幕鎖定
+            if (wakeLock !== null) {
+                wakeLock.release().then(() => wakeLock = null);
+            }
+            
             silentAudio.pause();
 
             isMonitoring = false;
@@ -334,10 +348,9 @@
             if (synth.speaking && !force) return;
             if (force) synth.cancel();
 
-            // 1. 確保無聲音樂正在播放 (鎖定 CarPlay 媒體通道)
+            // 確保無聲音樂正在播放 (鎖定 CarPlay 媒體通道)
             silentAudio.play().catch(()=>{});
             
-            // 2. 播放提示音 (叮!)
             playDing();
 
             const utterance = new SpeechSynthesisUtterance(text);
@@ -348,7 +361,6 @@
                              || voices.find(v => v.lang.includes("zh"));     
             if (targetVoice) utterance.voice = targetVoice;
 
-            // 3. 延遲 300ms 讓通道穩定後發話
             setTimeout(() => {
                 synth.speak(utterance);
             }, 300);
@@ -363,3 +375,4 @@
     </script>
 </body>
 </html>
+
