@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>防扣牌預防系統</title>
+    <title>防扣牌預防系統>ㄈㄤ ㄎㄡ ㄆ
     <style>
         /* --- 全域設定 --- */
         body {
@@ -15,7 +15,7 @@
             min-height: 100vh; min-height: 100dvh; 
             display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
             touch-action: manipulation;
-            transition: background-color 0.2s;
+            transition: background-color 0.1s;
         }
 
         /* 嚴重超速：紅色閃爍 */
@@ -34,7 +34,7 @@
         body.warning .text-info { color: #333; }
         @keyframes flash-yellow { from { background-color: #fbc02d; } to { background-color: #ffeb3b; } }
 
-        /* --- 介面佈局 --- */
+        /* --- 介面 --- */
         .container { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 95%; height: auto; flex-grow: 1; padding: 20px 0; }
         .dashboard { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; margin-bottom: 20px; }
         
@@ -77,6 +77,7 @@
         .btn-group { display: flex; gap: 10px; margin-top: 10px; }
         button { padding: 15px; font-size: 1.1rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; flex: 1; -webkit-appearance: none; }
         #test-btn { background-color: #28a745; }
+        #beep-btn { background-color: #ff9800; } /* 橘色測試按鈕 */
         #toggle-btn { background-color: #2979ff; }
         #toggle-btn.active { background-color: #d32f2f; }
         #status { margin-top: 10px; font-size: 0.8rem; color: #888; }
@@ -119,11 +120,16 @@
                 <input type="checkbox" id="auto-limit-check" checked style="width: auto; flex: none;"> 
                 <label for="auto-limit-check">OSM 自動速限</label>
             </div>
+            
             <div class="btn-group">
-                <button id="test-btn">🔊 測試聲音</button>
+                <button id="beep-btn">🚨 測試嗶聲</button>
+                <button id="test-btn">🔊 測試語音</button>
+            </div>
+            <div class="btn-group">
                 <button id="toggle-btn">🚀 啟動監控</button>
             </div>
-            <div id="status">準備就緒 (WAV 強制擴音版)</div>
+            
+            <div id="status">準備就緒</div>
         </div>
     </div>
 
@@ -136,6 +142,7 @@
         const voiceTextInput = document.getElementById('voice-text');
         const toggleBtn = document.getElementById('toggle-btn');
         const testBtn = document.getElementById('test-btn');
+        const beepBtn = document.getElementById('beep-btn');
         const statusDiv = document.getElementById('status');
         const autoLimitCheck = document.getElementById('auto-limit-check');
         const controlsPanel = document.getElementById('controls-panel');
@@ -153,72 +160,75 @@
         
         const synth = window.speechSynthesis;
 
-        // 1. 無聲背景音樂 (鎖定通道用)
+        // 音訊環境
+        let audioCtx = null;
+        
+        // 無聲音樂 (維持通道用)
         const silentAudio = new Audio();
         silentAudio.src = "data:audio/mp3;base64,SUQzBAAAAAABAFRYWFQAAAASAAADbWFqb3JfYnJhbmQAbXA0MgBUWFhUAAAAEQAAA21pbm9yX3ZlcnNpb24AMABUWFhUAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzb21tcDQyAFRTU0UAAAAPAAADTGF2ZjU3LjU2LjEwMAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWgAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
         silentAudio.loop = true;
         silentAudio.volume = 0.01; 
 
-        // 2. 真實音檔生成器 (解決 iOS 靜音問題)
-        function makeBeepWave() {
-            // 產生一個 0.8 秒的 WAV 檔案 Blob
-            const sampleRate = 44100;
-            const duration = 0.8; 
-            const numSamples = duration * sampleRate;
-            const buffer = new Uint8Array(44 + numSamples);
-            const view = new DataView(buffer.buffer);
-            
-            const writeString = (view, offset, string) => {
-                for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
-            };
-            
-            writeString(view, 0, 'RIFF');
-            view.setUint32(4, 36 + numSamples, true);
-            writeString(view, 8, 'WAVE');
-            writeString(view, 12, 'fmt ');
-            view.setUint32(16, 16, true);
-            view.setUint16(20, 1, true); 
-            view.setUint16(22, 1, true); 
-            view.setUint32(24, sampleRate, true);
-            view.setUint32(28, sampleRate, true);
-            view.setUint16(32, 1, true);
-            view.setUint16(34, 8, true); 
-            writeString(view, 36, 'data');
-            view.setUint32(40, numSamples, true);
-            
-            // 產生 880Hz 方波 (Square Wave) - 這種聲音最響亮、穿透力最強
-            const frequency = 880; 
-            for (let i = 0; i < numSamples; i++) {
-                const t = i / sampleRate;
-                // 方波：大於0就是最大聲(200)，小於0就是最小聲(55)
-                const sample = (Math.sin(2 * Math.PI * frequency * t) > 0 ? 200 : 55); 
-                view.setUint8(44 + i, sample);
-            }
-            return URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
-        }
-
-        let beepPlayer = new Audio();
-        beepPlayer.src = makeBeepWave();
-        beepPlayer.volume = 1.0;
-
         updateThresholdDisplay();
 
-        // 測試按鈕
-        testBtn.addEventListener('click', () => {
-            // 必須由使用者點擊來觸發第一次播放，以解鎖 Audio Context
-            silentAudio.play().catch(()=>{});
-            
-            beepPlayer.currentTime = 0;
-            beepPlayer.play();
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            // 確保無聲音樂播放，鎖定通道
+            silentAudio.play().catch(e => console.log('Silent play failed:', e));
+        }
 
+        // --- 核心：原生嗶聲產生器 (Web Audio API) ---
+        function playHighBeep() {
+            if (!audioCtx) initAudioContext();
+            
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            // 設定波形為「方波」(Square)，聲音最刺耳、最響亮
+            oscillator.type = 'square'; 
+            
+            // 頻率 900Hz (高頻警報)
+            oscillator.frequency.setValueAtTime(900, audioCtx.currentTime);
+            
+            // 音量控制 (最大聲)
+            gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8); // 0.8秒漸弱
+            
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.8); // 播放 0.8 秒
+        }
+
+        // --- 獨立測試按鈕事件 ---
+        
+        // 1. 測試嗶聲
+        beepBtn.addEventListener('click', () => {
+            initAudioContext();
+            playHighBeep();
+            statusDiv.textContent = "🔊 正在播放嗶聲...";
+            setTimeout(() => statusDiv.textContent = "準備就緒", 1000);
+        });
+
+        // 2. 測試語音
+        testBtn.addEventListener('click', () => {
+            initAudioContext();
+            // 先嗶一聲
+            playHighBeep();
+            // 延遲 0.5 秒講話
             setTimeout(() => {
-                speak(voiceTextInput.value || "音訊測試", true);
-            }, 1000);
+                speak(voiceTextInput.value || "語音測試正常", true);
+            }, 500);
         });
 
         toggleBtn.addEventListener('click', () => {
-            silentAudio.play().catch(()=>{}); // 確保通道開啟
-            
+            initAudioContext(); 
             if (!isMonitoring) startMonitoring();
             else stopMonitoring();
         });
@@ -233,7 +243,6 @@
             alarmThresholdText.textContent = base + TOLERANCE;
         }
 
-        // 螢幕恆亮
         async function requestWakeLock() {
             try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
         }
@@ -264,7 +273,9 @@
         function stopMonitoring() {
             if (watchId !== null) navigator.geolocation.clearWatch(watchId);
             if (wakeLock !== null) wakeLock.release();
+            
             silentAudio.pause();
+            
             isMonitoring = false;
             toggleBtn.textContent = "啟動監控";
             toggleBtn.classList.remove('active');
@@ -299,29 +310,24 @@
             const now = Date.now();
 
             if (currentSpeed > alarmTrigger) {
-                // --- 嚴重超速：紅色 + 語音 + 前置嗶聲 ---
+                // 紅色警報
                 body.classList.remove('warning');
                 body.classList.add('danger');
                 
                 if (now - lastSpeakTime > 3000) { 
-                    // 為了確保語音不被吞掉，先嗶一聲喚醒
-                    beepPlayer.currentTime = 0;
-                    beepPlayer.play();
-                    
-                    // 延遲一點點再講話
+                    playHighBeep(); // 語音前也嗶一下
                     setTimeout(() => speak(voiceTextInput.value), 400);
                     lastSpeakTime = now;
                 }
 
             } else if (currentSpeed > preWarningStart) {
-                // --- 黃色預警：黃色 + 真實音檔嗶嗶 (0.8s) ---
+                // 黃色預警 (嗶嗶聲)
                 body.classList.remove('danger');
                 body.classList.add('warning');
 
-                // 每 1000ms 檢查一次
+                // 每 1000ms (1秒) 觸發一次
                 if (now - lastBeepTime > 1000) {
-                    beepPlayer.currentTime = 0;
-                    beepPlayer.play().catch(e => console.error(e));
+                    playHighBeep();
                     lastBeepTime = now;
                 }
 
@@ -369,9 +375,6 @@
         function speak(text, force = false) {
             if (synth.speaking && !force) return;
             if (force) synth.cancel();
-
-            // 確保無聲音樂正在播放 (鎖定通道)
-            silentAudio.play().catch(()=>{});
 
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'zh-TW';
