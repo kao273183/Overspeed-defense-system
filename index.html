@@ -2,26 +2,27 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>扣牌防禦警示 (限速+38)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GPS 智慧測速 (橫直雙用版)</title>
     <style>
+        /* --- 全域設定 --- */
         body {
             background-color: #000;
             color: #fff;
             font-family: 'Arial', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
             margin: 0;
-            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden; /* 禁止滾動 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
             touch-action: manipulation;
         }
 
         body.danger {
-            background-color: #b71c1c; /* 危險時變深紅 */
-            animation: flash 0.5s infinite alternate; /* 加強閃爍效果 */
+            background-color: #b71c1c;
+            animation: flash 0.5s infinite alternate;
         }
 
         @keyframes flash {
@@ -29,141 +30,216 @@
             to { background-color: #ff0000; }
         }
 
-        /* --- 主儀表板區域 --- */
+        /* --- 容器佈局 (預設直向) --- */
+        .container {
+            display: flex;
+            flex-direction: column; /* 直向堆疊 */
+            align-items: center;
+            justify-content: center;
+            width: 95%;
+            height: 95%;
+        }
+
+        /* --- 儀表板區域 --- */
         .dashboard {
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-bottom: 10px;
+            justify-content: center;
+            flex: 1; /* 佔據大部分空間 */
+            width: 100%;
         }
 
         #speed-display {
-            font-size: 8rem;
             font-weight: bold;
             line-height: 1;
             text-shadow: 0 0 10px rgba(0,255,0,0.5);
             color: #0f0;
+            font-size: 18vh; /* 根據高度自動縮放 */
+            transition: color 0.2s;
         }
-        body.danger #speed-display { color: #fff; text-shadow: none; }
         
-        .unit { font-size: 2rem; color: #aaa; }
+        body.danger #speed-display { color: #fff; text-shadow: none; }
+        .unit { font-size: 0.3em; color: #aaa; }
 
-        /* --- 視覺化限速牌 --- */
-        .limit-container {
-            margin-top: 10px;
+        /* 限速牌與資訊 */
+        .info-area {
             display: flex;
             align-items: center;
             gap: 15px;
+            margin-top: 10px;
         }
 
         .limit-sign {
-            width: 70px;
-            height: 70px;
+            width: 12vh;  /* 使用 vh 確保在橫向時不會太大 */
+            height: 12vh;
             background-color: #fff;
-            border: 7px solid #cc0000;
+            border: 0.8vh solid #cc0000;
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
             color: #000;
             font-weight: bold;
-            font-size: 2.2rem;
+            font-size: 5vh;
             box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            flex-shrink: 0;
         }
-
         .limit-sign.unknown { border-color: #777; color: #777; }
 
-        .limit-info { text-align: left; font-size: 0.9rem; color: #ccc; }
-
-        /* --- 警報門檻顯示 (新功能) --- */
-        .threshold-display {
-            margin-top: 15px;
-            font-size: 1.2rem;
-            color: #ffeb3b; /* 黃色提醒 */
-            font-weight: bold;
-            border: 1px solid #555;
-            padding: 5px 15px;
-            border-radius: 20px;
-            background: rgba(0,0,0,0.5);
+        .text-info {
+            text-align: left;
+            font-size: 0.9rem;
+            color: #ccc;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }
 
-        /* --- 控制區 --- */
+        .threshold-badge {
+            color: #ffeb3b;
+            border: 1px solid #555;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.5);
+            display: inline-block;
+        }
+
+        /* --- 控制面板區域 --- */
         .controls {
-            width: 90%;
+            width: 100%;
             max-width: 400px;
-            background: rgba(30, 30, 30, 0.9);
+            background: rgba(30, 30, 30, 0.8);
             padding: 15px;
             border-radius: 15px;
-            margin-top: 20px;
             text-align: center;
+            margin-top: 10px;
+            transition: opacity 0.3s;
         }
 
-        .input-group { margin-bottom: 10px; text-align: left; }
-        .input-group label { display: block; margin-bottom: 3px; font-size: 0.9rem; color: #ccc; }
-
-        input[type="number"], input[type="text"] {
-            width: 100%; padding: 8px; font-size: 1.1rem;
-            border-radius: 5px; border: none; box-sizing: border-box; 
+        /* 監控中自動讓控制面板變半透明，避免干擾 */
+        .controls.monitoring {
+            opacity: 0.3; 
         }
+        .controls.monitoring:hover { opacity: 1; }
 
-        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
-
+        .input-row { display: flex; gap: 10px; margin-bottom: 8px; }
+        input {
+            flex: 1; padding: 8px; font-size: 1rem;
+            border-radius: 5px; border: none; text-align: center;
+        }
+        
+        .btn-group { display: flex; gap: 10px; }
         button {
-            padding: 12px; font-size: 1.1rem; border: none;
-            border-radius: 8px; cursor: pointer; font-weight: bold;
+            padding: 10px; font-size: 1rem; border: none;
+            border-radius: 5px; cursor: pointer; font-weight: bold;
             color: white; flex: 1;
         }
-
         #test-btn { background-color: #28a745; }
-        #toggle-btn { background-color: #2979ff; flex: 2; }
+        #toggle-btn { background-color: #2979ff; }
         #toggle-btn.active { background-color: #d32f2f; }
         
-        #status { margin-top: 8px; font-size: 0.8rem; color: #888; }
+        #status { margin-top: 5px; font-size: 0.8rem; color: #888; }
+
+        /* =========================================
+           🚀 橫向模式 (Landscape) 專用設定
+           當寬度 > 高度時觸發
+           ========================================= */
+        @media (orientation: landscape) {
+            .container {
+                flex-direction: row; /* 改為左右排列 */
+                gap: 20px;
+            }
+
+            /* 左側儀表板：佔據 60% 寬度 */
+            .dashboard {
+                flex: 2; 
+                flex-direction: row; /* 速度跟限速牌左右排 */
+                justify-content: center;
+                gap: 30px;
+            }
+
+            /* 橫向時，速度字體可以超大 */
+            #speed-display {
+                font-size: 40vh; /* 佔據螢幕高度的 40% */
+                order: 1; /* 速度在左 */
+            }
+
+            .info-area {
+                flex-direction: column; /* 限速牌和文字垂直排 */
+                order: 2; /* 資訊在右 */
+                align-items: center;
+                margin-top: 0;
+            }
+
+            .limit-sign {
+                width: 20vh;
+                height: 20vh;
+                font-size: 8vh;
+                border-width: 1.5vh;
+            }
+
+            .text-info {
+                text-align: center;
+                font-size: 1rem;
+            }
+
+            /* 右側控制區：佔據 30% 寬度，縮小放在旁邊 */
+            .controls {
+                flex: 1;
+                max-width: 300px;
+                padding: 10px;
+                display: flex; /* 使用 flex 讓內容緊湊 */
+                flex-direction: column;
+                justify-content: center;
+            }
+            
+            /* 橫向時隱藏不重要的文字，只留輸入框跟按鈕 */
+            .input-label { display: none; } 
+        }
     </style>
 </head>
 <body>
 
-    <div class="dashboard">
-        <div id="speed-display">0 <span class="unit">km/h</span></div>
+    <div class="container">
+        <div class="dashboard">
+            <div id="speed-display">0<span class="unit"></span></div>
 
-        <div class="limit-container">
-            <div id="visual-limit" class="limit-sign unknown">--</div>
-            <div class="limit-info">
-                道路限速<br>
-                <span id="limit-source-text" style="font-size: 0.8rem; color: #f57c00;">(等待 GPS...)</span>
+            <div class="info-area">
+                <div id="visual-limit" class="limit-sign unknown">--</div>
+                
+                <div class="text-info">
+                    <span id="limit-source-text" style="color:#aaa; font-size: 0.8em;">GPS 待命</span>
+                    <div class="threshold-badge">
+                        警報: <span id="alarm-threshold-text">--</span>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="threshold-display">
-            警報觸發點: <span id="alarm-threshold-text">--</span> km/h
-        </div>
-    </div>
+        <div class="controls" id="controls-panel">
+            <div class="input-row">
+                <input type="number" id="limit-input" value="110" placeholder="速限">
+            </div>
+            <div class="input-row">
+                <input type="text" id="voice-text" value="嚴重超速！請煞車" placeholder="語音內容">
+            </div>
+            
+            <div style="font-size: 0.8rem; text-align: left; margin-bottom: 5px;">
+                <input type="checkbox" id="auto-limit-check" checked> 
+                <label for="auto-limit-check">OSM 自動速限</label>
+            </div>
 
-    <div class="controls">
-        <div class="input-group">
-            <label>基礎限速 (OSM自動抓取或手動):</label>
-            <input type="number" id="limit-input" value="110">
+            <div class="btn-group">
+                <button id="test-btn">測試</button>
+                <button id="toggle-btn">啟動</button>
+            </div>
+            <div id="status">準備就緒</div>
         </div>
-
-        <div class="input-group">
-            <label>警報語音內容:</label>
-            <input type="text" id="voice-text" value="嚴重超速！請立即煞車！">
-        </div>
-
-        <div style="text-align: left; font-size: 0.9rem; margin-bottom: 5px;">
-            <input type="checkbox" id="auto-limit-check" checked> 
-            <label for="auto-limit-check">自動抓取路段限速 (OSM)</label>
-        </div>
-
-        <div class="btn-group">
-            <button id="test-btn">🔊 測試</button>
-            <button id="toggle-btn">🚀 啟動</button>
-        </div>
-        
-        <div id="status">準備就緒</div>
     </div>
 
     <script>
+        // DOM Elements
         const speedDisplay = document.getElementById('speed-display');
         const limitInput = document.getElementById('limit-input');
         const visualLimit = document.getElementById('visual-limit');
@@ -174,25 +250,24 @@
         const testBtn = document.getElementById('test-btn');
         const statusDiv = document.getElementById('status');
         const autoLimitCheck = document.getElementById('auto-limit-check');
+        const controlsPanel = document.getElementById('controls-panel');
         const body = document.body;
 
+        // Variables
         let watchId = null;
         let wakeLock = null;
         let lastSpeakTime = 0;
         let isMonitoring = false;
         let lastOsmCheckTime = 0;
-        
-        // 設定寬限值 (超過此數值才叫)
         const TOLERANCE = 38; 
-
         const synth = window.speechSynthesis;
 
-        // 初始化顯示
+        // Init
         updateThresholdDisplay();
 
-        // --- 事件綁定 ---
+        // Events
         testBtn.addEventListener('click', () => {
-            speak(voiceTextInput.value || "測試語音", true);
+            speak(voiceTextInput.value || "測試", true);
         });
 
         toggleBtn.addEventListener('click', () => {
@@ -200,21 +275,19 @@
             else stopMonitoring();
         });
 
-        // 當基礎限速改變時，同步更新警報門檻顯示
         limitInput.addEventListener('input', () => {
             updateVisualSign(limitInput.value, false);
             updateThresholdDisplay();
         });
 
-        // --- 功能函式 ---
+        // Functions
         function updateThresholdDisplay() {
             const base = parseInt(limitInput.value) || 0;
-            // 顯示 基礎 + 38
             alarmThresholdText.textContent = base + TOLERANCE;
         }
 
         async function startMonitoring() {
-            speak("扣牌防禦系統啟動", true);
+            speak("系統啟動", true);
             try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
 
             if (navigator.geolocation) {
@@ -223,8 +296,9 @@
                     enableHighAccuracy: true, timeout: 5000, maximumAge: 0
                 });
                 isMonitoring = true;
-                toggleBtn.textContent = "🛑 停止";
+                toggleBtn.textContent = "停止";
                 toggleBtn.classList.add('active');
+                controlsPanel.classList.add('monitoring'); // 讓控制面板變淡
             } else {
                 alert("不支援 GPS");
             }
@@ -234,9 +308,10 @@
             if (watchId !== null) navigator.geolocation.clearWatch(watchId);
             if (wakeLock !== null) wakeLock.release();
             isMonitoring = false;
-            toggleBtn.textContent = "🚀 啟動";
+            toggleBtn.textContent = "啟動";
             toggleBtn.classList.remove('active');
-            speedDisplay.innerHTML = `0 <span class="unit">km/h</span>`;
+            controlsPanel.classList.remove('monitoring');
+            speedDisplay.innerHTML = `0<span class="unit"></span>`;
             body.classList.remove('danger');
             statusDiv.textContent = "已暫停";
         }
@@ -246,10 +321,9 @@
             if (speedMps === null || speedMps < 0) speedMps = 0;
             const speedKmh = speedMps * 3.6;
 
-            speedDisplay.innerHTML = `${Math.round(speedKmh)} <span class="unit">km/h</span>`;
-            statusDiv.textContent = `精確度: ±${Math.round(position.coords.accuracy)}m`;
+            speedDisplay.innerHTML = `${Math.round(speedKmh)}<span class="unit"></span>`;
+            statusDiv.textContent = `GPS: ±${Math.round(position.coords.accuracy)}m`;
 
-            // 自動限速 API (每15秒 & 時速>10)
             const now = Date.now();
             if (autoLimitCheck.checked && (now - lastOsmCheckTime > 15000) && speedKmh > 10) {
                 fetchSpeedLimit(position.coords.latitude, position.coords.longitude);
@@ -261,7 +335,6 @@
 
         function checkOverSpeed(currentSpeed) {
             const baseLimit = parseFloat(limitInput.value);
-            // 核心邏輯修改： 觸發點 = 基礎限速 + 38
             const alarmTrigger = baseLimit + TOLERANCE; 
 
             if (currentSpeed > alarmTrigger) {
@@ -277,16 +350,13 @@
         }
 
         async function fetchSpeedLimit(lat, lon) {
-            console.log(`🌐 查詢座標: ${lat}, ${lon}`);
-            limitSourceText.textContent = "更新中...";
-            
+            limitSourceText.textContent = "查詢中...";
             const query = `[out:json];way[maxspeed](around:20,${lat},${lon});out tags;`;
             const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
 
             try {
                 const response = await fetch(url);
                 const data = await response.json();
-
                 if (data.elements && data.elements.length > 0) {
                     let maxspeed = data.elements[0].tags.maxspeed;
                     let limitNumber = parseInt(maxspeed);
@@ -295,15 +365,13 @@
                     if (!isNaN(limitNumber)) {
                         limitInput.value = limitNumber; 
                         updateVisualSign(limitNumber, true);
-                        updateThresholdDisplay(); // 重要：更新警報門檻顯示
-                        console.log(`✅ 限速更新: ${limitNumber}`);
+                        updateThresholdDisplay();
                     }
                 } else {
-                    limitSourceText.textContent = "無資料 (維持設定)";
+                    limitSourceText.textContent = "無 OSM 資料";
                     updateVisualSign(limitInput.value, false);
                 }
             } catch (err) {
-                console.error("API Error", err);
                 limitSourceText.textContent = "連線失敗";
             }
         }
@@ -312,13 +380,8 @@
             if (val && val > 0) {
                 visualLimit.textContent = val;
                 visualLimit.classList.remove('unknown');
-                if (isAuto) {
-                    limitSourceText.innerHTML = "OSM 自動更新";
-                    limitSourceText.style.color = "#4caf50";
-                } else {
-                    limitSourceText.innerHTML = "手動 / 上次設定";
-                    limitSourceText.style.color = "#aaa";
-                }
+                limitSourceText.innerHTML = isAuto ? "OSM 自動" : "手動設定";
+                limitSourceText.style.color = isAuto ? "#4caf50" : "#aaa";
             } else {
                 visualLimit.textContent = "--";
                 visualLimit.classList.add('unknown');
@@ -340,7 +403,7 @@
 
         function handleError(error) {
             console.warn(`GPS Error: ${error.message}`);
-            statusDiv.textContent = "❌ 無法取得 GPS 位置";
+            statusDiv.textContent = "❌ GPS 訊號遺失";
         }
         
         window.speechSynthesis.onvoiceschanged = () => {};
