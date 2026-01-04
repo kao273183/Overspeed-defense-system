@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GPS 智慧測速 (橫直雙用版)</title>
+    <title>GPS 智慧測速 (可捲動版)</title>
     <style>
         /* --- 全域設定 --- */
         body {
@@ -11,12 +11,21 @@
             color: #fff;
             font-family: 'Arial', sans-serif;
             margin: 0;
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden; /* 禁止滾動 */
+            
+            /* 修正點 1: 允許垂直捲動 */
+            overflow-y: auto; 
+            overflow-x: hidden;
+            
+            /* 修正點 2: 使用 min-height 確保至少有螢幕高，但不限制變長 */
+            min-height: 100vh;
+            /* 針對支援 dvh 的瀏覽器 (如 iOS Safari) 優化 */
+            min-height: 100dvh; 
+
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            /* 改為 flex-start 避免捲動時上方被切掉 */
+            justify-content: flex-start; 
             touch-action: manipulation;
         }
 
@@ -30,14 +39,17 @@
             to { background-color: #ff0000; }
         }
 
-        /* --- 容器佈局 (預設直向) --- */
+        /* --- 容器佈局 --- */
         .container {
             display: flex;
-            flex-direction: column; /* 直向堆疊 */
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             width: 95%;
-            height: 95%;
+            /* 讓容器高度自動撐開，並保留一點上下邊距 */
+            height: auto;
+            flex-grow: 1; 
+            padding: 20px 0;
         }
 
         /* --- 儀表板區域 --- */
@@ -46,8 +58,8 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            flex: 1; /* 佔據大部分空間 */
             width: 100%;
+            margin-bottom: 20px; /* 與下方控制區保持距離 */
         }
 
         #speed-display {
@@ -55,8 +67,9 @@
             line-height: 1;
             text-shadow: 0 0 10px rgba(0,255,0,0.5);
             color: #0f0;
-            font-size: 18vh; /* 根據高度自動縮放 */
+            font-size: 15vh; /* 稍微縮小一點字體以免太擠 */
             transition: color 0.2s;
+            margin-bottom: 10px;
         }
         
         body.danger #speed-display { color: #fff; text-shadow: none; }
@@ -67,21 +80,20 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            margin-top: 10px;
         }
 
         .limit-sign {
-            width: 12vh;  /* 使用 vh 確保在橫向時不會太大 */
-            height: 12vh;
+            width: 100px;
+            height: 100px;
             background-color: #fff;
-            border: 0.8vh solid #cc0000;
+            border: 8px solid #cc0000;
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
             color: #000;
             font-weight: bold;
-            font-size: 5vh;
+            font-size: 40px;
             box-shadow: 0 0 15px rgba(0,0,0,0.5);
             flex-shrink: 0;
         }
@@ -110,92 +122,91 @@
             width: 100%;
             max-width: 400px;
             background: rgba(30, 30, 30, 0.8);
-            padding: 15px;
+            padding: 20px;
             border-radius: 15px;
             text-align: center;
-            margin-top: 10px;
+            /* 確保底部有空間按按鈕 */
+            margin-bottom: 30px; 
             transition: opacity 0.3s;
         }
 
-        /* 監控中自動讓控制面板變半透明，避免干擾 */
-        .controls.monitoring {
-            opacity: 0.3; 
-        }
+        .controls.monitoring { opacity: 0.3; }
         .controls.monitoring:hover { opacity: 1; }
 
-        .input-row { display: flex; gap: 10px; margin-bottom: 8px; }
+        .input-row { display: flex; gap: 10px; margin-bottom: 15px; }
+        
+        /* 讓輸入框更高一點，好按 */
         input {
-            flex: 1; padding: 8px; font-size: 1rem;
-            border-radius: 5px; border: none; text-align: center;
+            flex: 1; padding: 12px; font-size: 1.1rem;
+            border-radius: 8px; border: none; text-align: center;
         }
         
-        .btn-group { display: flex; gap: 10px; }
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        
         button {
-            padding: 10px; font-size: 1rem; border: none;
-            border-radius: 5px; cursor: pointer; font-weight: bold;
+            padding: 15px; font-size: 1.1rem; border: none;
+            border-radius: 8px; cursor: pointer; font-weight: bold;
             color: white; flex: 1;
+            /* 防止按鈕在 iPhone 上有預設樣式 */
+            -webkit-appearance: none; 
         }
         #test-btn { background-color: #28a745; }
         #toggle-btn { background-color: #2979ff; }
         #toggle-btn.active { background-color: #d32f2f; }
         
-        #status { margin-top: 5px; font-size: 0.8rem; color: #888; }
+        #status { margin-top: 10px; font-size: 0.8rem; color: #888; }
 
         /* =========================================
-           🚀 橫向模式 (Landscape) 專用設定
-           當寬度 > 高度時觸發
+           🚀 橫向模式 (Landscape)
            ========================================= */
         @media (orientation: landscape) {
-            .container {
-                flex-direction: row; /* 改為左右排列 */
-                gap: 20px;
+            body {
+                /* 橫向時通常不需要滑動，除非螢幕真的太小 */
+                overflow-y: auto; 
+                justify-content: center; /* 橫向時置中 */
             }
 
-            /* 左側儀表板：佔據 60% 寬度 */
+            .container {
+                flex-direction: row;
+                gap: 30px;
+                padding: 10px;
+                height: 100%; /* 填滿高度 */
+            }
+
             .dashboard {
                 flex: 2; 
-                flex-direction: row; /* 速度跟限速牌左右排 */
+                flex-direction: row;
                 justify-content: center;
-                gap: 30px;
+                gap: 40px;
+                margin-bottom: 0;
             }
 
-            /* 橫向時，速度字體可以超大 */
             #speed-display {
-                font-size: 40vh; /* 佔據螢幕高度的 40% */
-                order: 1; /* 速度在左 */
+                font-size: 35vh; 
+                order: 1;
+                margin-bottom: 0;
             }
 
             .info-area {
-                flex-direction: column; /* 限速牌和文字垂直排 */
-                order: 2; /* 資訊在右 */
+                flex-direction: column;
+                order: 2;
                 align-items: center;
-                margin-top: 0;
             }
 
             .limit-sign {
-                width: 20vh;
-                height: 20vh;
-                font-size: 8vh;
-                border-width: 1.5vh;
+                width: 18vh; height: 18vh;
+                font-size: 7vh; border-width: 1.2vh;
             }
 
-            .text-info {
-                text-align: center;
-                font-size: 1rem;
-            }
-
-            /* 右側控制區：佔據 30% 寬度，縮小放在旁邊 */
             .controls {
                 flex: 1;
-                max-width: 300px;
-                padding: 10px;
-                display: flex; /* 使用 flex 讓內容緊湊 */
+                max-width: 320px;
+                margin-bottom: 0;
+                display: flex;
                 flex-direction: column;
                 justify-content: center;
+                padding: 15px;
             }
-            
-            /* 橫向時隱藏不重要的文字，只留輸入框跟按鈕 */
-            .input-label { display: none; } 
         }
     </style>
 </head>
@@ -219,20 +230,20 @@
 
         <div class="controls" id="controls-panel">
             <div class="input-row">
-                <input type="number" id="limit-input" value="50" placeholder="速限">
+                <input type="number" id="limit-input" value="110" placeholder="速限">
             </div>
             <div class="input-row">
                 <input type="text" id="voice-text" value="嚴重超速！請煞車" placeholder="語音內容">
             </div>
             
-            <div style="font-size: 0.8rem; text-align: left; margin-bottom: 5px;">
-                <input type="checkbox" id="auto-limit-check" checked> 
+            <div style="font-size: 0.9rem; text-align: left; margin-bottom: 10px;">
+                <input type="checkbox" id="auto-limit-check" checked style="width: auto; flex: none;"> 
                 <label for="auto-limit-check">OSM 自動速限</label>
             </div>
 
             <div class="btn-group">
-                <button id="test-btn">測試</button>
-                <button id="toggle-btn">啟動</button>
+                <button id="test-btn">測試語音</button>
+                <button id="toggle-btn">啟動監控</button>
             </div>
             <div id="status">準備就緒</div>
         </div>
@@ -296,9 +307,9 @@
                     enableHighAccuracy: true, timeout: 5000, maximumAge: 0
                 });
                 isMonitoring = true;
-                toggleBtn.textContent = "停止";
+                toggleBtn.textContent = "停止監控";
                 toggleBtn.classList.add('active');
-                controlsPanel.classList.add('monitoring'); // 讓控制面板變淡
+                controlsPanel.classList.add('monitoring'); 
             } else {
                 alert("不支援 GPS");
             }
@@ -308,7 +319,7 @@
             if (watchId !== null) navigator.geolocation.clearWatch(watchId);
             if (wakeLock !== null) wakeLock.release();
             isMonitoring = false;
-            toggleBtn.textContent = "啟動";
+            toggleBtn.textContent = "啟動監控";
             toggleBtn.classList.remove('active');
             controlsPanel.classList.remove('monitoring');
             speedDisplay.innerHTML = `0<span class="unit"></span>`;
