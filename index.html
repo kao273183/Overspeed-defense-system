@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>防扣牌預警系統</title>
-    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <style>
@@ -59,11 +58,7 @@
             max-width: 60%;
             display: flex; align-items: center; gap: 5px;
         }
-        #location-display::before {
-            content: '📍';
-            filter: hue-rotate(320deg); 
-            font-size: 1.1rem;
-        }
+        #location-display::before { content: '📍'; filter: hue-rotate(320deg); font-size: 1.1rem; }
 
         /* --- 側邊設定欄 --- */
         #settings-drawer {
@@ -92,7 +87,7 @@
         .drawer-title { font-size: 1.3rem; font-weight: bold; color: #eee; }
         .close-btn { background: none; border: none; color: #aaa; font-size: 1.8rem; cursor: pointer; padding: 0 5px; }
 
-        /* --- 歷史紀錄 Modal --- */
+        /* --- Modal 共用 --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); z-index: 300;
@@ -100,15 +95,12 @@
             backdrop-filter: blur(5px);
         }
         .modal-overlay.show { display: flex; }
-        
         .modal-container {
             width: 90%; max-width: 500px; height: 85%;
             background: #1c1c1e; border-radius: 20px;
             display: flex; flex-direction: column; overflow: hidden;
             border: 1px solid #333;
         }
-        
-        /* 歷史清單樣式 */
         .history-header {
             padding: 20px; background: #2c2c2e; font-weight: bold; font-size: 1.2rem;
             display: flex; justify-content: space-between; align-items: center;
@@ -126,83 +118,66 @@
         .h-val { color: #fff; }
         .h-val.max { color: #ff3b30; }
         .empty-msg { text-align: center; color: #666; margin-top: 50px; }
-        .map-btn {
-            background: #007aff; color: white; border: none; padding: 8px;
-            border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-top: 5px;
+        .btn-link { 
+            background: #28a745; color: white; border: none; padding: 6px 12px; 
+            border-radius: 6px; cursor: pointer; font-size: 0.8rem; text-decoration: none; display:inline-block;
         }
-        .clear-btn { color: #ff3b30; background: none; border: none; font-size: 0.9rem; cursor: pointer; }
-
-        /* 地圖 Modal 專用 */
+        
+        /* 地圖 Modal */
         #map-container { flex: 1; width: 100%; position: relative; }
         #trip-map { width: 100%; height: 100%; background: #000; }
         .back-btn { 
-            position: absolute; 
-            top: 20px;        /* 距離頂部 */
-            right: 20px;      /* 改到右上角 (原本是 left: 10px) */
-            left: auto;       /* 清除左邊設定 */
-            z-index: 2000;    /* 加大層級，確保浮在地圖控制項之上 */
-            
-            background: #007aff; /* 改成亮藍色，比較像按鈕 */
-            color: #fff; 
-            border: none;
-            padding: 10px 24px; 
-            border-radius: 30px; 
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.6); /* 增加陰影讓它浮起來 */
-            transition: transform 0.1s;
+            position: absolute; top: 20px; right: 20px; left: auto; z-index: 2000;
+            background: #007aff; color: #fff; border: none;
+            padding: 10px 24px; border-radius: 30px; cursor: pointer; font-weight: bold; font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6); transition: transform 0.1s;
         }
+        .back-btn:active { transform: scale(0.95); }
 
         /* --- 主畫面佈局 --- */
         .main-container {
             display: flex; flex-direction: column; 
             align-items: center; justify-content: space-between; 
-            width: 100%; height: 100%;
-            padding: 10px; box-sizing: border-box;
-            padding-top: 60px;
+            width: 100%; height: 100%; padding: 10px; box-sizing: border-box; padding-top: 60px;
         }
-
         .dashboard {
             flex-grow: 1; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; width: 100%;
-            transition: all 0.3s;
+            align-items: center; justify-content: center; width: 100%; transition: all 0.3s;
         }
-
         #speed-display {
-            font-weight: bold; line-height: 1;
-            text-shadow: 0 0 20px rgba(0,255,0,0.8);
-            color: #0f0; 
-            font-size: 28vh; 
-            margin: 0; padding: 0;
-            transition: color 0.2s;
+            font-weight: bold; line-height: 1; text-shadow: 0 0 20px rgba(0,255,0,0.8);
+            color: #0f0; font-size: 28vh; margin: 0; padding: 0; transition: color 0.2s;
             font-family: 'Arial Black', sans-serif;
         }
         #speed-display::after {
             content: 'km/h'; display: block; font-size: 1.5rem; 
-            color: #0f0; text-align: center; font-weight: normal; margin-top: -10px;
-            text-shadow: none; opacity: 0.8;
+            color: #0f0; text-align: center; font-weight: normal; margin-top: -10px; text-shadow: none; opacity: 0.8;
         }
-
         body.danger #speed-display { color: #fff; text-shadow: none; }
         body.danger #speed-display::after { color: #fff; }
 
-        .info-area { 
-            display: flex; align-items: center; gap: 20px; 
-            margin-top: 10px; opacity: 0.9;
-        }
+        .info-area { display: flex; align-items: center; gap: 20px; margin-top: 10px; opacity: 0.9; }
+        
+        /* 速限牌與回報按鈕容器 */
+        .limit-container { position: relative; display: flex; flex-direction: column; align-items: center; }
         
         .limit-sign {
             width: 80px; height: 80px; background-color: #fff;
             border: 10px solid #cc0000; border-radius: 50%;
             display: flex; justify-content: center; align-items: center;
             color: #000; font-weight: bold; font-size: 36px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.5);
-            font-family: Arial, sans-serif;
-            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5); font-family: Arial, sans-serif; transition: all 0.3s;
         }
-        .limit-sign.unknown { border-color: #777; color: #777; }
+        .limit-sign.unknown { border-color: #777; color: #777; font-size: 40px; } /* 問號時字體 */
         
+        /* 回報按鈕 (當速限未知時顯示) */
+        #report-btn {
+            margin-top: 10px; background: #ff9800; color: #000; font-weight: bold;
+            border: none; padding: 5px 10px; border-radius: 15px; font-size: 0.8rem;
+            cursor: pointer; display: none; animation: pop 0.3s ease-out;
+        }
+        @keyframes pop { from {transform: scale(0);} to {transform: scale(1);} }
+
         .threshold-info { display: flex; flex-direction: column; align-items: flex-start; }
         .threshold-badge { 
             color: #ffeb3b; border: 1px solid #555; padding: 4px 10px; 
@@ -213,41 +188,29 @@
 
         /* --- 底部控制區 --- */
         .primary-controls { 
-            width: 100%; max-width: 400px; 
-            display: flex; flex-direction: column; gap: 10px; 
-            background: #1c1c1e;
-            padding: 15px; border-radius: 20px; margin-bottom: 10px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-            transition: all 0.3s;
+            width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 10px; 
+            background: #1c1c1e; padding: 15px; border-radius: 20px; margin-bottom: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5); transition: all 0.3s;
         }
-
         .control-group-left { display: flex; flex-direction: column; gap: 10px; width: 100%; }
-        
         .quick-presets { display: flex; gap: 8px; width: 100%; }
         .preset-btn { 
-            background: #3a3a3c; color: #fff; border: none; 
-            padding: 12px 0; font-size: 1rem; border-radius: 8px; flex: 1; 
-            font-weight: bold;
+            background: #3a3a3c; color: #fff; border: none; padding: 12px 0; 
+            font-size: 1rem; border-radius: 8px; flex: 1; font-weight: bold;
         }
         .preset-btn:active { background: #555; }
-
         .adjust-row { display: flex; align-items: center; gap: 8px; height: 45px; }
         .adjust-btn { 
-            background: #3a3a3c; color: white; border: none; 
-            width: 60px; height: 100%; font-size: 1.2rem; border-radius: 8px; cursor: pointer; 
+            background: #3a3a3c; color: white; border: none; width: 60px; height: 100%; 
+            font-size: 1.2rem; border-radius: 8px; cursor: pointer; 
         }
-        
         input[type="number"] { 
             flex-grow: 1; height: 100%; font-size: 1.5rem; font-weight: bold;
-            border-radius: 8px; border: none; text-align: center; 
-            background: #2c2c2e; color: #fff; padding: 0;
+            border-radius: 8px; border: none; text-align: center; background: #2c2c2e; color: #fff; padding: 0;
         }
-
         #toggle-btn {
-            width: 100%; padding: 15px; font-size: 1.2rem; border: none;
-            border-radius: 12px; cursor: pointer; font-weight: bold; color: white;
-            background-color: #007aff; 
-            display: flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%; padding: 15px; font-size: 1.2rem; border: none; border-radius: 12px; cursor: pointer; 
+            font-weight: bold; color: white; background-color: #007aff; display: flex; align-items: center; justify-content: center; gap: 8px;
         }
         #toggle-btn.active { background-color: #ff3b30; }
 
@@ -258,70 +221,30 @@
         .file-upload { position: relative; overflow: hidden; display: block; width: 100%; }
         .file-upload input[type="file"] { position: absolute; top: 0; right: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
         .file-btn { background-color: #333; color: #ddd; padding: 12px; border-radius: 8px; display: block; text-align: center; border: 1px dashed #777; font-size: 0.9rem; }
-        .drawer-btn { width: 100%; padding: 12px; font-size: 1rem; border: none; border-radius: 8px; cursor: pointer; color: white; margin-top: 10px; font-weight: bold; }
+        .drawer-btn { width: 100%; padding: 12px; font-size: 1rem; border: none; border-radius: 8px; cursor: pointer; color: white; margin-top: 10px; font-weight: bold; margin-bottom: 10px; }
         #test-file-btn { background-color: #ff9800; }
         #test-tts-btn { background-color: #28a745; }
         #pip-btn { background-color: #9c27b0; }
         #history-btn { background-color: #007aff; }
+        #osm-report-btn { background-color: #e91e63; }
         #status { margin-top: auto; padding-bottom: 10px; font-size: 0.8rem; color: #666; text-align: center; }
         #pip-canvas { display: none; }
         #pip-video { position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; }
 
-        /* =========================================
-           📱 橫向模式 (Landscape)
-           ========================================= */
         @media (orientation: landscape) {
-            .main-container {
-                padding: 10px 40px; 
-                padding-top: 60px;
-                justify-content: flex-end; 
-            }
-            .dashboard {
-                flex-direction: row; 
-                align-items: center;
-                justify-content: center;
-                gap: 50px; 
-                margin-bottom: 15px; 
-            }
-            #speed-display {
-                font-size: 40vh; 
-                text-align: center;
-                line-height: 0.9;
-            }
-            .info-area {
-                margin-top: 0;
-                flex-direction: row; 
-            }
-            .limit-sign {
-                width: 130px; 
-                height: 130px; 
-                font-size: 60px; 
-                border-width: 12px; 
-            }
-            .primary-controls {
-                max-width: 850px;
-                width: 95%;
-                flex-direction: row; 
-                align-items: stretch;
-                padding: 10px 20px; 
-                background: #1c1c1e;
-                gap: 15px;
-            }
-            .control-group-left {
-                flex: 2;
-                justify-content: space-between;
-                gap: 6px; 
-            }
-            #toggle-btn {
-                flex: 1;
-                font-size: 1.4rem;
-                height: auto; 
-            }
+            .main-container { padding: 10px 40px; padding-top: 60px; justify-content: flex-end; }
+            .dashboard { flex-direction: row; align-items: center; justify-content: center; gap: 50px; margin-bottom: 15px; }
+            #speed-display { font-size: 40vh; text-align: center; line-height: 0.9; }
+            .info-area { margin-top: 0; flex-direction: row; }
+            .limit-sign { width: 130px; height: 130px; font-size: 60px; border-width: 12px; }
+            .limit-sign.unknown { font-size: 80px; }
+            .primary-controls { max-width: 850px; width: 95%; flex-direction: row; align-items: stretch; padding: 10px 20px; background: #1c1c1e; gap: 15px; }
+            .control-group-left { flex: 2; justify-content: space-between; gap: 6px; }
+            #toggle-btn { flex: 1; font-size: 1.4rem; height: auto; }
             .preset-btn { padding: 8px 0; font-size: 0.9rem; }
             .adjust-row { height: 40px; }
         }
     </style>
-    
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
@@ -332,7 +255,6 @@
 
     <canvas id="pip-canvas" width="512" height="512"></canvas>
     <video id="pip-video" muted playsinline></video>
-
     <div id="overlay" onclick="toggleMenu()"></div>
 
     <div id="settings-drawer">
@@ -341,12 +263,9 @@
             <button class="close-btn" onclick="toggleMenu()">×</button>
         </div>
         <div class="input-group">
-            <label>行車紀錄</label>
-            <button class="drawer-btn" id="history-btn" onclick="showHistory()">📊 查看歷史紀錄</button>
-        </div>
-        <div class="input-group">
-            <label>顯示模式</label>
-            <button class="drawer-btn" id="pip-btn">📺 開啟子母畫面 (PiP)</button>
+            <label>資料管理</label>
+            <button class="drawer-btn" id="history-btn" onclick="showHistory()">📊 查看行車紀錄</button>
+            <button class="drawer-btn" id="osm-report-btn" onclick="showOsmReports()">📝 查看缺漏回報</button>
         </div>
         <div class="input-group">
             <label>OSM 自動速限</label>
@@ -360,26 +279,16 @@
             <input type="text" id="voice-text" value="嚴重超速！請煞車">
             <button class="drawer-btn" id="test-tts-btn">🗣️ 測試語音</button>
         </div>
-        <div class="input-group">
-            <label>警示音效 (黃色預警用)</label>
-            <div class="file-upload">
-                <div class="file-btn" id="file-label">📂 更換音效 (預設 sound.mp3)</div>
-                <input type="file" id="sound-upload" accept="audio/*">
-            </div>
-            <button class="drawer-btn" id="test-file-btn">🔊 測試音效</button>
-        </div>
         <div id="status">準備就緒</div>
     </div>
 
     <div id="history-modal" class="modal-overlay">
         <div class="modal-container">
             <div class="history-header">
-                <span>行車紀錄</span>
-                <button class="clear-btn" onclick="clearHistory()">🗑️ 清除全部</button>
+                <span id="modal-title">行車紀錄</span>
                 <button class="close-btn" onclick="closeHistory()" style="color:#fff;font-size:1.5rem;">×</button>
             </div>
-            <div class="history-list" id="history-list">
-                </div>
+            <div class="history-list" id="history-list"></div>
         </div>
     </div>
 
@@ -393,21 +302,19 @@
     </div>
 
     <div class="main-container">
-        
         <div class="dashboard">
             <div id="speed-display">0</div> 
-            
             <div class="info-area">
-                <div id="visual-limit" class="limit-sign unknown">50</div>
+                <div class="limit-container">
+                    <div id="visual-limit" class="limit-sign unknown">?</div>
+                    <button id="report-btn" onclick="reportMissingLimit()">✍️ 回報</button>
+                </div>
                 <div class="threshold-info">
-                    <div class="threshold-badge">
-                        扣牌: <span id="alarm-threshold-text">88</span>
-                    </div>
-                    <span id="limit-source-text" class="limit-source">手動設定</span>
+                    <div class="threshold-badge">扣牌: <span id="alarm-threshold-text">88</span></div>
+                    <span id="limit-source-text" class="limit-source">等待 GPS...</span>
                 </div>
             </div>
         </div>
-
         <div class="primary-controls">
             <div class="control-group-left">
                 <div class="quick-presets">
@@ -415,14 +322,12 @@
                     <button class="preset-btn" onclick="setLimit(40)">40</button>
                     <button class="preset-btn" onclick="setLimit(50)">50</button>
                 </div>
-
                 <div class="adjust-row">
                     <button class="adjust-btn" id="btn-minus">-10</button> 
                     <input type="number" id="limit-input" value="50">
                     <button class="adjust-btn" id="btn-plus">+10</button> 
                 </div>
             </div>
-
             <button id="toggle-btn">🚀 啟動偵測</button>
         </div>
     </div>
@@ -435,19 +340,14 @@
         const visualLimit = document.getElementById('visual-limit');
         const limitSourceText = document.getElementById('limit-source-text');
         const alarmThresholdText = document.getElementById('alarm-threshold-text');
+        const reportBtn = document.getElementById('report-btn');
         
         const voiceTextInput = document.getElementById('voice-text');
-        const soundUpload = document.getElementById('sound-upload');
-        const fileLabel = document.getElementById('file-label');
-
         const toggleBtn = document.getElementById('toggle-btn');
-        const testFileBtn = document.getElementById('test-file-btn');
         const testTtsBtn = document.getElementById('test-tts-btn');
         const btnMinus = document.getElementById('btn-minus');
         const btnPlus = document.getElementById('btn-plus');
         const clockEl = document.getElementById('clock');
-        const pipBtn = document.getElementById('pip-btn');
-
         const statusDiv = document.getElementById('status');
         const autoLimitCheck = document.getElementById('auto-limit-check');
         const drawer = document.getElementById('settings-drawer');
@@ -456,9 +356,8 @@
 
         const historyModal = document.getElementById('history-modal');
         const historyListEl = document.getElementById('history-list');
+        const modalTitle = document.getElementById('modal-title');
         const mapModal = document.getElementById('map-modal');
-
-        // PiP Elements
         const pipCanvas = document.getElementById('pip-canvas');
         const pipCtx = pipCanvas.getContext('2d');
         const pipVideo = document.getElementById('pip-video');
@@ -467,29 +366,28 @@
         let wakeLock = null;
         let lastSpeakTime = 0;
         let lastBeepTime = 0; 
-        
         let isMonitoring = false; 
-        
         let lastOsmCheckTime = 0;
         let lastAddressCheckTime = 0; 
         
-        // --- 行車紀錄變數 ---
+        // 全域變數：追蹤是否為第一次定位
+        let isFirstFix = true;
+
+        // Trip vars
         let tripStartTime = null;
         let tripMaxSpeed = 0;
-        let tripDistance = 0; // km
-        let currentTripPath = []; // 儲存 [lat, lon] 陣列
+        let tripDistance = 0; 
+        let currentTripPath = []; 
         let lastLat = null;
         let lastLon = null;
-
         let mapInstance = null;
         let polylineLayer = null;
 
         const TOLERANCE = 38; 
         const PRE_WARNING_BUFFER = 5; 
-        
         const synth = window.speechSynthesis;
 
-        // --- 時鐘功能 ---
+        // --- 時鐘 ---
         function updateClock() {
             const now = new Date();
             const hours = String(now.getHours()).padStart(2, '0');
@@ -499,139 +397,117 @@
         setInterval(updateClock, 1000);
         updateClock(); 
 
-        // 1. 無聲背景音樂
+        // --- 音效 ---
         const silentAudio = new Audio();
-        silentAudio.src = "data:audio/mp3;base64,SUQzBAAAAAABAFRYWFQAAAASAAADbWFqb3JfYnJhbmQAbXA0MgBUWFhUAAAAEQAAA21pbm9yX3ZlcnNpb24AMABUWFhUAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzb21tcDQyAFRTU0UAAAAPAAADTGF2ZjU3LjU2LjEwMAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWgAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
-        silentAudio.loop = true;
-        silentAudio.volume = 0.01; 
+        silentAudio.src = "data:audio/mp3;base64,SUQzBAAAAAABAFRYWFQAAAASAAADbWFqb3JfYnJhbmQAbXA0MgBUWFhUAAAAEQAAA21pbm9yX3ZlcnNpb24AMABUWFhUAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzb21tcDQyAFRTU0UAAAAPAAADTGF2ZjU3LjU2LjEwMAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWgAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
+        silentAudio.loop = true; silentAudio.volume = 0.01; 
 
-        // 2. 警報音效
-        let beepAudio = new Audio();
-        const DEFAULT_SOUND_PATH = './sound.mp3';
-
-        function makeDefaultBeep() {
-            const sampleRate = 44100;
-            const duration = 0.5; 
-            const numSamples = duration * sampleRate;
-            const buffer = new Uint8Array(44 + numSamples);
-            const view = new DataView(buffer.buffer);
-            const writeString = (view, offset, string) => { for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i)); };
-            writeString(view, 0, 'RIFF'); view.setUint32(4, 36 + numSamples, true); writeString(view, 8, 'WAVE'); writeString(view, 12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true); view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate, true); view.setUint16(32, 1, true); view.setUint16(34, 8, true); writeString(view, 36, 'data'); view.setUint32(40, numSamples, true);
-            const frequency = 880; 
-            for (let i = 0; i < numSamples; i++) {
-                const t = i / sampleRate;
-                const sample = (Math.sin(2 * Math.PI * frequency * t) > 0 ? 200 : 55); 
-                view.setUint8(44 + i, sample);
-            }
-            return URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
+        let beepAudio = new Audio('./sound.mp3');
+        function playCustomSound() {
+            beepAudio.currentTime = 0;
+            beepAudio.play().catch(e => console.log("Sound error", e));
         }
 
-        function initSound() {
-            beepAudio.src = DEFAULT_SOUND_PATH;
-            beepAudio.onerror = function() {
-                fileLabel.textContent = "⚠️ 無 sound.mp3 (用預設音)";
-                beepAudio.src = makeDefaultBeep();
-            };
-            beepAudio.oncanplaythrough = function() {
-                fileLabel.textContent = "✅ 已載入 sound.mp3";
-                fileLabel.style.borderColor = "#28a745";
-            };
-        }
-        initSound();
-
-        // 預設更新
-        updateVisualSign(50, false);
-        updateThresholdDisplay();
-        updatePiP(0, 50);
-
-        // --- PiP 子母畫面邏輯 ---
-        function updatePiP(currentSpeed, limit) {
-            pipCtx.fillStyle = '#000000';
-            pipCtx.fillRect(0, 0, 512, 512);
-
-            const baseLimit = parseInt(limit) || 0;
-            const alarmTrigger = baseLimit + TOLERANCE;
-            const preWarningStart = alarmTrigger - PRE_WARNING_BUFFER;
-            let bgColor = '#000000';
-            
-            if (isMonitoring) {
-                if (currentSpeed > alarmTrigger) bgColor = '#b71c1c'; 
-                else if (currentSpeed > preWarningStart) bgColor = '#fbc02d'; 
-            }
-
-            if (bgColor !== '#000000') {
-                pipCtx.fillStyle = bgColor;
-                pipCtx.fillRect(0, 0, 512, 512);
-            }
-
-            pipCtx.fillStyle = (bgColor === '#b71c1c') ? '#ffffff' : (bgColor === '#fbc02d' ? '#000000' : '#00ff00');
-            pipCtx.font = 'bold 250px Arial';
-            pipCtx.textAlign = 'center';
-            pipCtx.textBaseline = 'middle';
-            pipCtx.fillText(Math.round(currentSpeed), 256, 200);
-
-            pipCtx.beginPath();
-            pipCtx.arc(256, 400, 70, 0, 2 * Math.PI);
-            pipCtx.fillStyle = '#ffffff';
-            pipCtx.fill();
-            pipCtx.lineWidth = 10;
-            pipCtx.strokeStyle = '#cc0000';
-            pipCtx.stroke();
-            pipCtx.fillStyle = '#000000';
-            pipCtx.font = 'bold 60px Arial';
-            pipCtx.fillText(baseLimit, 256, 403);
-        }
-
-       pipBtn.addEventListener('click', async () => {
-            if (typeof pipCanvas.captureStream !== 'function') {
-                alert("⚠️ 很抱歉，iPhone (iOS) 系統不支援「網頁畫布轉影片」技術，因此無法使用子母畫面。\n\n（這是 Apple 的系統限制，目前僅 Android 手機或電腦版 Chrome 支援此功能）");
-                return;
-            }
-
-            try {
-                updatePiP(0, limitInput.value);
-                if (document.pictureInPictureElement) {
-                    await document.exitPictureInPicture();
-                    return;
-                }
-                if (!pipVideo.srcObject) {
-                    const stream = pipCanvas.captureStream(30);
-                    pipVideo.srcObject = stream;
-                }
-                await pipVideo.play();
-                if (pipVideo.readyState >= 1) {
-                    await pipVideo.requestPictureInPicture();
-                } else {
-                    pipVideo.onloadedmetadata = async () => {
-                        await pipVideo.requestPictureInPicture();
-                    };
-                }
-                toggleMenu();
-            } catch (err) {
-                alert("無法啟動子母畫面 (瀏覽器不支援或權限不足)\n錯誤: " + err.message);
-                console.error(err);
-            }
+        testTtsBtn.addEventListener('click', () => {
+            playCustomSound();
+            setTimeout(() => { speak(voiceTextInput.value || "測試語音"); }, 1000);
         });
 
-        // --- UI 操作邏輯 ---
+        // --- UI 操作 ---
         window.toggleMenu = function() {
             drawer.classList.toggle('open');
-            if (drawer.classList.contains('open')) {
-                overlay.style.display = 'block';
-            } else {
-                overlay.style.display = 'none';
+            if (drawer.classList.contains('open')) overlay.style.display = 'block';
+            else overlay.style.display = 'none';
+        };
+
+        // --- 缺漏回報系統 ---
+        let currentMissingLat = null;
+        let currentMissingLon = null;
+
+        window.reportMissingLimit = function() {
+            if (!currentMissingLat || !currentMissingLon) {
+                alert("尚未定位，無法回報");
+                return;
+            }
+            const input = prompt("請輸入此路段的正確速限 (例如 50)：", "50");
+            if (input) {
+                const limit = parseInt(input);
+                if (!isNaN(limit)) {
+                    saveCustomLimit(currentMissingLat, currentMissingLon, limit);
+                    setLimit(limit);
+                    updateVisualSign(limit, false, true); 
+                    alert("✅ 已記錄！下次經過這裡會自動套用此速限。");
+                }
             }
         };
 
-        // --- 歷史紀錄與地圖邏輯 ---
+        function saveCustomLimit(lat, lon, limit) {
+            let reports = JSON.parse(localStorage.getItem('osm_reports') || "[]");
+            const newReport = {
+                lat: lat,
+                lon: lon,
+                limit: limit,
+                date: new Date().toLocaleString('zh-TW'),
+                address: locationDisplay.textContent.replace('📍 ', '')
+            };
+            reports.push(newReport);
+            localStorage.setItem('osm_reports', JSON.stringify(reports));
+        }
+
+        function findCustomLimit(lat, lon) {
+            const reports = JSON.parse(localStorage.getItem('osm_reports') || "[]");
+            for (let r of reports) {
+                if (Math.abs(r.lat - lat) < 0.0005 && Math.abs(r.lon - lon) < 0.0005) {
+                    return r.limit;
+                }
+            }
+            return null;
+        }
+
+        window.showOsmReports = function() {
+            toggleMenu();
+            const reports = JSON.parse(localStorage.getItem('osm_reports') || "[]");
+            modalTitle.textContent = "OSM 缺漏回報列表";
+            historyListEl.innerHTML = "";
+            
+            if (reports.length === 0) {
+                historyListEl.innerHTML = `<div class="empty-msg">尚無回報紀錄</div>`;
+            } else {
+                reports.forEach((r, idx) => {
+                    const editLink = `https://www.openstreetmap.org/edit?editor=id#map=19/${r.lat}/${r.lon}`;
+                    const item = document.createElement('div');
+                    item.className = 'history-item';
+                    item.innerHTML = `
+                        <div class="h-date">${r.date}</div>
+                        <div style="font-size:1.1rem; font-weight:bold;">${r.address || "未知路段"}</div>
+                        <div class="h-stats">
+                            <span>建議速限: <span style="color:#0f0">${r.limit}</span></span>
+                        </div>
+                        <div style="margin-top:5px;">
+                            <a href="${editLink}" target="_blank" class="btn-link">🌍 前往 OSM 修正地圖</a>
+                            <button class="btn-link" style="background:#d32f2f; margin-left:10px;" onclick="deleteReport(${idx})">刪除</button>
+                        </div>
+                    `;
+                    historyListEl.appendChild(item);
+                });
+            }
+            historyModal.classList.add('show');
+        }
+
+        window.deleteReport = function(index) {
+            let reports = JSON.parse(localStorage.getItem('osm_reports') || "[]");
+            reports.splice(index, 1);
+            localStorage.setItem('osm_reports', JSON.stringify(reports));
+            showOsmReports(); 
+        }
+
+        // --- 歷史紀錄 ---
         window.showHistory = function() {
             toggleMenu(); 
             renderHistory();
             historyModal.classList.add('show');
         };
-        window.closeHistory = function() {
-            historyModal.classList.remove('show');
-        };
+        window.closeHistory = function() { historyModal.classList.remove('show'); };
         window.clearHistory = function() {
             if(confirm('確定要刪除所有紀錄嗎？')) {
                 localStorage.removeItem('trip_records');
@@ -639,52 +515,25 @@
             }
         };
 
-        // 顯示地圖
         window.showMap = function(index) {
             const records = JSON.parse(localStorage.getItem('trip_records') || "[]");
             const record = records[index];
-            if(!record || !record.path || record.path.length === 0) {
-                alert("此行程沒有軌跡資料");
-                return;
-            }
-
+            if(!record || !record.path || record.path.length === 0) { alert("無軌跡資料"); return; }
             mapModal.classList.add('show');
-            
-            // 初始化地圖 (如果還沒初始化)
             if (!mapInstance) {
                 mapInstance = L.map('trip-map');
-                // 使用深色底圖 (CartoDB Dark Matter)
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                    attribution: '&copy; OpenStreetMap &copy; CARTO',
-                    subdomains: 'abcd',
-                    maxZoom: 19
+                    attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 19
                 }).addTo(mapInstance);
             }
-            
-            // 清除舊的路徑
-            if (polylineLayer) {
-                mapInstance.removeLayer(polylineLayer);
-            }
-
-            // 修正地圖大小 (因為它是從 hidden 變成 visible)
+            if (polylineLayer) mapInstance.removeLayer(polylineLayer);
             setTimeout(() => {
                 mapInstance.invalidateSize();
-                
-                // 畫出軌跡
-                polylineLayer = L.polyline(record.path, {
-                    color: '#0f0', // 螢光綠軌跡
-                    weight: 4,
-                    opacity: 0.8
-                }).addTo(mapInstance);
-
-                // 縮放地圖到軌跡範圍
+                polylineLayer = L.polyline(record.path, { color: '#0f0', weight: 4, opacity: 0.8 }).addTo(mapInstance);
                 mapInstance.fitBounds(polylineLayer.getBounds(), { padding: [50, 50] });
             }, 100);
         };
-
-        window.closeMap = function() {
-            mapModal.classList.remove('show');
-        };
+        window.closeMap = function() { mapModal.classList.remove('show'); };
 
         function saveTrip() {
             if (!tripStartTime) return;
@@ -694,29 +543,26 @@
 
             const hours = durationMs / 1000 / 3600;
             const avgSpeed = hours > 0 ? (tripDistance / hours) : 0;
-
             const record = {
                 date: tripStartTime.toLocaleString('zh-TW'),
                 duration: (durationMs / 1000 / 60).toFixed(1) + " 分",
                 distance: tripDistance.toFixed(1) + " km",
                 maxSpeed: Math.round(tripMaxSpeed) + " km/h",
                 avgSpeed: Math.round(avgSpeed) + " km/h",
-                path: currentTripPath // 儲存軌跡
+                path: currentTripPath
             };
-
             let records = JSON.parse(localStorage.getItem('trip_records') || "[]");
-            records.unshift(record); 
-            if (records.length > 20) records.pop(); // 限制20筆以避免 LocalStorage 爆掉
+            records.unshift(record); if (records.length > 20) records.pop();
             localStorage.setItem('trip_records', JSON.stringify(records));
-            
-            alert(`🏁 行程結束，已儲存！\n\n📏 里程: ${record.distance}\n🚀 極速: ${record.maxSpeed}\n⏱️ 時間: ${record.duration}`);
+            alert(`🏁 行程結束\n里程: ${record.distance}\n時間: ${record.duration}`);
         }
 
         function renderHistory() {
+            modalTitle.textContent = "行車紀錄";
             const records = JSON.parse(localStorage.getItem('trip_records') || "[]");
             historyListEl.innerHTML = "";
             if (records.length === 0) {
-                historyListEl.innerHTML = `<div class="empty-msg">尚無紀錄<br>按「啟動偵測」開始記錄</div>`;
+                historyListEl.innerHTML = `<div class="empty-msg">尚無紀錄</div>`;
                 return;
             }
             records.forEach((r, index) => {
@@ -729,70 +575,26 @@
                         <div class="h-stat-box"><span class="h-label">平均</span><span class="h-val">${r.avgSpeed}</span></div>
                         <div class="h-stat-box"><span class="h-label">里程</span><span class="h-val">${r.distance}</span></div>
                     </div>
-                    <button class="map-btn" onclick="showMap(${index})">🗺️ 查看地圖軌跡</button>
+                    <button class="btn-link" style="margin-top:5px;background:#007aff;" onclick="showMap(${index})">🗺️ 查看地圖</button>
                 `;
                 historyListEl.appendChild(item);
             });
         }
 
+        // --- 主要邏輯 ---
         window.setLimit = function(val) {
             limitInput.value = val;
             updateVisualSign(val, false);
             updateThresholdDisplay();
             updatePiP(0, val);
         };
-
-        btnMinus.addEventListener('click', () => {
-            let current = parseInt(limitInput.value) || 0;
-            current = Math.max(0, current - 10);
-            limitInput.value = current;
-            updateVisualSign(current, false);
-            updateThresholdDisplay();
-            updatePiP(0, current);
-        });
-
-        btnPlus.addEventListener('click', () => {
-            let current = parseInt(limitInput.value) || 0;
-            current = current + 10;
-            limitInput.value = current;
-            updateVisualSign(current, false);
-            updateThresholdDisplay();
-            updatePiP(0, current);
-        });
-
-        soundUpload.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const objectUrl = URL.createObjectURL(file);
-                beepAudio.src = objectUrl;
-                beepAudio.onerror = null; 
-                fileLabel.textContent = `📂 使用: ${file.name}`;
-                fileLabel.style.backgroundColor = "#28a745";
-                playCustomSound();
-            }
-        });
-
-        function playCustomSound() {
-            beepAudio.currentTime = 0;
-            beepAudio.play().catch(e => console.log("Sound error", e));
-        }
-
-        testFileBtn.addEventListener('click', () => {
-            playCustomSound();
-        });
-
-        testTtsBtn.addEventListener('click', () => {
-            playCustomSound();
-            setTimeout(() => { speak(voiceTextInput.value || "測試語音"); }, 1000);
-        });
+        btnMinus.addEventListener('click', () => setLimit(Math.max(0, (parseInt(limitInput.value)||0) - 10)));
+        btnPlus.addEventListener('click', () => setLimit((parseInt(limitInput.value)||0) + 10));
 
         toggleBtn.addEventListener('click', () => {
             silentAudio.play().catch(()=>{}); 
-            if (!isMonitoring) {
-                startActiveMonitoring();
-            } else {
-                stopActiveMonitoring();
-            }
+            if (!isMonitoring) startActiveMonitoring();
+            else stopActiveMonitoring();
         });
 
         limitInput.addEventListener('input', () => {
@@ -806,221 +608,204 @@
             alarmThresholdText.textContent = base + TOLERANCE;
         }
 
-        async function requestWakeLock() {
-            try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
-        }
-        document.addEventListener('visibilitychange', async () => {
-            if (wakeLock !== null && document.visibilityState === 'visible') { await requestWakeLock(); }
-        });
+        async function requestWakeLock() { try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
+        document.addEventListener('visibilitychange', async () => { if (wakeLock !== null && document.visibilityState === 'visible') await requestWakeLock(); });
 
         function initGPS() {
             if (navigator.geolocation) {
-                statusDiv.textContent = "定位中 (監控待命)";
+                statusDiv.textContent = "定位中...";
                 locationDisplay.textContent = "定位中...";
-                watchId = navigator.geolocation.watchPosition(updatePosition, handleError, {
-                    enableHighAccuracy: true, timeout: 5000, maximumAge: 0
-                });
-            } else {
-                alert("此瀏覽器不支援 GPS");
-            }
+                watchId = navigator.geolocation.watchPosition(updatePosition, handleError, { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 });
+            } else { alert("此瀏覽器不支援 GPS"); }
         }
         initGPS();
 
         async function startActiveMonitoring() {
-            silentAudio.play().catch(()=>{});
-            playCustomSound();
+            silentAudio.play().catch(()=>{}); playCustomSound();
             setTimeout(() => { speak("偵測開始"); }, 800);
             await requestWakeLock();
-
-            // 重置行程數據
-            tripStartTime = new Date();
-            tripMaxSpeed = 0;
-            tripDistance = 0;
-            lastLat = null;
-            lastLon = null;
-            currentTripPath = []; // 清空軌跡
-
+            tripStartTime = new Date(); tripMaxSpeed = 0; tripDistance = 0;
+            currentTripPath = []; lastLat = null; lastLon = null;
             isMonitoring = true; 
-            toggleBtn.textContent = "🛑 停止偵測";
-            toggleBtn.classList.add('active');
+            toggleBtn.textContent = "🛑 停止偵測"; toggleBtn.classList.add('active');
             statusDiv.textContent = "⚠️ 監控中";
         }
 
         function stopActiveMonitoring() {
             if (wakeLock !== null) wakeLock.release();
-            silentAudio.pause();
-            
-            // 儲存行程
-            saveTrip();
-
+            silentAudio.pause(); saveTrip();
             isMonitoring = false; 
-            toggleBtn.textContent = "🚀 啟動偵測";
-            toggleBtn.classList.remove('active');
-            
-            body.classList.remove('danger');
-            body.classList.remove('warning');
-            
-            statusDiv.textContent = "已暫停 (定位持續中)";
+            toggleBtn.textContent = "🚀 啟動偵測"; toggleBtn.classList.remove('active');
+            body.classList.remove('danger'); body.classList.remove('warning');
+            statusDiv.textContent = "已暫停";
         }
 
         function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
-            const R = 6371; 
-            const dLat = deg2rad(lat2-lat1);  
-            const dLon = deg2rad(lon2-lon1); 
-            const a = 
-                Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-            const d = R * c; 
-            return d;
+            const R = 6371; const dLat = (lat2-lat1)*(Math.PI/180); const dLon = (lon2-lon1)*(Math.PI/180);
+            const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*(Math.PI/180))*Math.cos(lat2*(Math.PI/180))*Math.sin(dLon/2)*Math.sin(dLon/2);
+            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
         }
-        function deg2rad(deg) { return deg * (Math.PI/180); }
 
         function updatePosition(position) {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            let speedMps = position.coords.speed;
-            if (speedMps === null || speedMps < 0) speedMps = 0;
+            const lat = position.coords.latitude; const lon = position.coords.longitude;
+            let speedMps = position.coords.speed; if (speedMps === null || speedMps < 0) speedMps = 0;
             const speedKmh = speedMps * 3.6;
 
-            // --- 行車紀錄邏輯 ---
-            if (isMonitoring) {
-                if (lastLat !== null && lastLon !== null) {
-                    const dist = getDistanceFromLatLonInKm(lastLat, lastLon, lat, lon);
-                    // 簡單過濾 GPS 漂移 & 距離篩選 (大於 10 公尺才記錄一點，避免檔案過大)
-                    if (speedKmh > 2 && dist > 0.0005 && dist < 0.2) { 
-                        tripDistance += dist;
-                    }
-                    // 記錄軌跡點 (距離 > 10m 才存)
-                    if (dist > 0.01) {
-                         currentTripPath.push([lat, lon]);
-                    }
-                } else {
-                    // 第一點
-                    currentTripPath.push([lat, lon]);
-                }
+            currentMissingLat = lat; currentMissingLon = lon;
 
+            if (isMonitoring) {
+                if (lastLat !== null) {
+                    const dist = getDistanceFromLatLonInKm(lastLat, lastLon, lat, lon);
+                    if (speedKmh > 2 && dist > 0.0005 && dist < 0.2) tripDistance += dist;
+                    if (dist > 0.01) currentTripPath.push([lat, lon]);
+                } else currentTripPath.push([lat, lon]);
                 if (speedKmh > tripMaxSpeed) tripMaxSpeed = speedKmh;
-                lastLat = lat;
-                lastLon = lon;
+                lastLat = lat; lastLon = lon;
             }
 
             speedDisplay.innerHTML = `${Math.round(speedKmh)}`;
-            
             const now = Date.now();
-            if (autoLimitCheck.checked && (now - lastOsmCheckTime > 15000) && speedKmh > 10) {
-                fetchSpeedLimit(lat, lon);
+            
+            // OSM & 地址更新
+            // 修改條件：如果是「第一次定位 (isFirstFix)」，強制執行一次 OSM 查詢
+            if (autoLimitCheck.checked && ( (now - lastOsmCheckTime > 15000 && speedKmh > 10) || isFirstFix ) ) {
+                
+                // 1. 先查本地是否有紀錄
+                const savedLimit = findCustomLimit(lat, lon);
+                if (savedLimit) {
+                    limitInput.value = savedLimit;
+                    updateVisualSign(savedLimit, false, true); 
+                    updateThresholdDisplay();
+                } else {
+                    // 2. 沒有本地紀錄才查 OSM
+                    fetchSpeedLimit(lat, lon);
+                }
                 lastOsmCheckTime = now;
+                isFirstFix = false; // 標記已執行過第一次
             }
-            if (now - lastAddressCheckTime > 15000) {
-                fetchAddress(lat, lon);
-                lastAddressCheckTime = now;
-            }
+
+            if (now - lastAddressCheckTime > 15000) { fetchAddress(lat, lon); lastAddressCheckTime = now; }
             
             checkOverSpeed(speedKmh);
             updatePiP(speedKmh, limitInput.value);
         }
 
         function checkOverSpeed(currentSpeed) {
-            if (!isMonitoring) {
-                body.classList.remove('danger');
-                body.classList.remove('warning');
-                return;
-            }
+            if (!isMonitoring) { body.classList.remove('danger', 'warning'); return; }
             const baseLimit = parseFloat(limitInput.value);
             const alarmTrigger = baseLimit + TOLERANCE; 
             const preWarningStart = alarmTrigger - PRE_WARNING_BUFFER; 
             const now = Date.now();
-
             if (currentSpeed > alarmTrigger) {
-                body.classList.remove('warning');
-                body.classList.add('danger');
-                if (now - lastSpeakTime > 3000) { 
-                    playCustomSound(); 
-                    setTimeout(() => speak(voiceTextInput.value), 1000);
-                    lastSpeakTime = now;
-                }
+                body.classList.remove('warning'); body.classList.add('danger');
+                if (now - lastSpeakTime > 3000) { playCustomSound(); setTimeout(() => speak(voiceTextInput.value), 1000); lastSpeakTime = now; }
             } else if (currentSpeed > preWarningStart) {
-                body.classList.remove('danger');
-                body.classList.add('warning');
-                if (now - lastBeepTime > 1000) {
-                    playCustomSound(); 
-                    lastBeepTime = now;
-                }
-            } else {
-                body.classList.remove('danger');
-                body.classList.remove('warning');
-            }
+                body.classList.remove('danger'); body.classList.add('warning');
+                if (now - lastBeepTime > 1000) { playCustomSound(); lastBeepTime = now; }
+            } else { body.classList.remove('danger', 'warning'); }
         }
 
         async function fetchAddress(lat, lon) {
             const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=zh-TW`;
             try {
-                const response = await fetch(url);
-                const data = await response.json();
+                const response = await fetch(url); const data = await response.json();
                 if (data && data.address) {
-                    const road = data.address.road || data.address.pedestrian || data.address.cycleway || "";
-                    const suburb = data.address.suburb || data.address.village || data.address.town || data.address.city_district || "";
-                    const city = data.address.city || data.address.county || "";
-                    let displayText = road ? `${suburb} ${road}` : (suburb ? `${city} ${suburb}` : `${city}`);
-                    locationDisplay.textContent = displayText.trim();
-                } else {
-                    locationDisplay.textContent = "無法辨識位置";
+                    const road = data.address.road || ""; const suburb = data.address.suburb || data.address.city_district || ""; const city = data.address.city || "";
+                    locationDisplay.textContent = road ? `${suburb} ${road}` : `${city} ${suburb}`;
                 }
-            } catch (err) { console.warn("Address fetch failed", err); }
+            } catch (err) {}
         }
 
         async function fetchSpeedLimit(lat, lon) {
             const query = `[out:json];way[maxspeed](around:20,${lat},${lon});out tags;`;
-            const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
             try {
-                const response = await fetch(url);
+                const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
                 const data = await response.json();
                 if (data.elements && data.elements.length > 0) {
                     let maxspeed = data.elements[0].tags.maxspeed;
                     let limitNumber = parseInt(maxspeed);
-                    if (maxspeed.includes("mph")) limitNumber = Math.round(limitNumber * 1.609);
                     if (!isNaN(limitNumber)) {
                         limitInput.value = limitNumber; 
                         updateVisualSign(limitNumber, true);
                         updateThresholdDisplay();
                         updatePiP(0, limitNumber);
+                    } else {
+                        // OSM 有路但沒限速 -> 預設 50
+                        setDefaultLimit();
                     }
+                } else {
+                    // OSM 沒資料 -> 預設 50
+                    setDefaultLimit();
                 }
-            } catch (err) {}
+            } catch (err) { 
+                // 連線錯誤 -> 預設 50
+                setDefaultLimit(); 
+            }
         }
 
-        function updateVisualSign(val, isAuto) {
+        // 新增函式：設定預設值
+        function setDefaultLimit() {
+            const defaultVal = 50;
+            limitInput.value = defaultVal;
+            updateVisualSign(defaultVal, true, false, true); // 最後參數 true 代表是「預設值」
+            updateThresholdDisplay();
+            updatePiP(0, defaultVal);
+        }
+
+        function updateVisualSign(val, isAuto, isCustom = false, isDefault = false) {
             if (val && val > 0) {
                 visualLimit.textContent = val;
                 visualLimit.classList.remove('unknown');
-                limitSourceText.innerHTML = isAuto ? "OSM 自動" : "手動設定";
-                limitSourceText.style.color = isAuto ? "#4caf50" : "#aaa";
+                
+                if (isDefault) {
+                    // 如果是預設值，顯示橘色文字並保留回報按鈕
+                    limitSourceText.innerHTML = "⚠️ 預設 (無資)";
+                    limitSourceText.style.color = "#ff9800";
+                    reportBtn.style.display = 'block'; // 允許修正預設值
+                } else {
+                    reportBtn.style.display = 'none'; // 已有確切速限，隱藏按鈕
+                    if (isCustom) {
+                        limitSourceText.innerHTML = "📝 本地記憶";
+                        limitSourceText.style.color = "#ff9800";
+                    } else {
+                        limitSourceText.innerHTML = isAuto ? "OSM 自動" : "手動設定";
+                        limitSourceText.style.color = isAuto ? "#4caf50" : "#aaa";
+                    }
+                }
             } else {
-                visualLimit.textContent = "--";
+                // 理論上不會跑到這裡，因為我們預設了 50，除非 50 也失效
+                visualLimit.textContent = "?";
                 visualLimit.classList.add('unknown');
+                limitSourceText.innerHTML = "⚠️ 無速限資料";
+                limitSourceText.style.color = "#ff3b30";
+                reportBtn.style.display = 'block';
             }
         }
 
         function speak(text) {
             if (synth.speaking) return;
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'zh-TW';
-            utterance.rate = 1.1; 
-            const voices = synth.getVoices();
-            const targetVoice = voices.find(v => v.name.includes("Google") && v.lang.includes("zh")) 
-                             || voices.find(v => v.lang.includes("zh"));     
-            if (targetVoice) utterance.voice = targetVoice;
-            synth.speak(utterance);
+            const u = new SpeechSynthesisUtterance(text); u.lang = 'zh-TW'; u.rate = 1.1; 
+            synth.speak(u);
         }
-
-        function handleError(error) {
-            console.warn(`GPS Error: ${error.message}`);
-            statusDiv.textContent = "❌ GPS 訊號遺失";
-            locationDisplay.textContent = "GPS 遺失";
-        }
+        function handleError(error) { statusDiv.textContent = "❌ GPS 訊號遺失"; locationDisplay.textContent = "GPS 遺失"; }
         
-        window.speechSynthesis.onvoiceschanged = () => {};
+        // PiP Logic
+        function updatePiP(currentSpeed, limit) {
+            pipCtx.fillStyle = '#000000'; pipCtx.fillRect(0, 0, 512, 512);
+            const baseLimit = parseInt(limit) || 0;
+            let bgColor = '#000000';
+            if (isMonitoring) {
+                if (currentSpeed > baseLimit + TOLERANCE) bgColor = '#b71c1c'; 
+                else if (currentSpeed > baseLimit + TOLERANCE - PRE_WARNING_BUFFER) bgColor = '#fbc02d'; 
+            }
+            if (bgColor !== '#000000') { pipCtx.fillStyle = bgColor; pipCtx.fillRect(0, 0, 512, 512); }
+            pipCtx.fillStyle = (bgColor === '#b71c1c') ? '#fff' : (bgColor === '#fbc02d' ? '#000' : '#0f0');
+            pipCtx.font = 'bold 250px Arial'; pipCtx.textAlign = 'center'; pipCtx.textBaseline = 'middle';
+            pipCtx.fillText(Math.round(currentSpeed), 256, 200);
+            pipCtx.beginPath(); pipCtx.arc(256, 400, 70, 0, 2 * Math.PI); pipCtx.fillStyle = '#fff'; pipCtx.fill();
+            pipCtx.lineWidth = 10; pipCtx.strokeStyle = '#cc0000'; pipCtx.stroke();
+            pipCtx.fillStyle = '#000'; pipCtx.font = 'bold 60px Arial'; pipCtx.fillText(baseLimit, 256, 403);
+        }
     </script>
 </body>
 </html>
