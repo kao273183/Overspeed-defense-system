@@ -11,160 +11,262 @@
             color: #fff;
             font-family: 'Arial', sans-serif;
             margin: 0;
-            overflow-y: auto; overflow-x: hidden;
-            min-height: 100vh; min-height: 100dvh; 
-            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+            overflow: hidden; 
+            height: 100vh; height: 100dvh; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
             touch-action: manipulation;
             transition: background-color 0.1s;
         }
 
-        /* 嚴重超速：紅色閃爍 */
-        body.danger {
-            background-color: #b71c1c;
-            animation: flash-red 0.5s infinite alternate;
-        }
+        /* 狀態顏色 */
+        body.danger { background-color: #b71c1c; animation: flash-red 0.5s infinite alternate; }
         @keyframes flash-red { from { background-color: #b71c1c; } to { background-color: #ff0000; } }
-
-        /* 預警模式：黃色閃爍 */
-        body.warning {
-            background-color: #fbc02d;
-            animation: flash-yellow 0.8s infinite alternate;
-        }
+        
+        body.warning { background-color: #fbc02d; animation: flash-yellow 0.8s infinite alternate; }
         body.warning #speed-display { color: #000; text-shadow: none; }
         body.warning .text-info { color: #333; }
         @keyframes flash-yellow { from { background-color: #fbc02d; } to { background-color: #ffeb3b; } }
 
-        /* --- 介面 --- */
-        .container { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 95%; height: auto; flex-grow: 1; padding: 20px 0; }
-        .dashboard { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; margin-bottom: 20px; }
+        /* --- 漢堡選單按鈕 (左上) --- */
+        #menu-btn {
+            position: absolute; top: 15px; left: 15px;
+            font-size: 1.8rem; background: none; border: none; color: #fff;
+            cursor: pointer; z-index: 100; padding: 5px; opacity: 0.7;
+        }
+
+        /* --- [新增] 右上角時鐘 --- */
+        #clock {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-family: 'Courier New', Courier, monospace; /* 稍微帶點數位感 */
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ddd;
+            z-index: 90;
+            background: rgba(255, 255, 255, 0.1); /* 輕微背景增加可讀性 */
+            padding: 5px 15px;
+            border-radius: 8px;
+            letter-spacing: 2px;
+        }
+
+        /* --- 側邊設定欄 (漢堡選單內容) --- */
+        #settings-drawer {
+            position: fixed; top: 0; left: 0;
+            width: 85%; max-width: 350px; height: 100%;
+            background: rgba(25, 25, 25, 0.98); 
+            backdrop-filter: blur(15px);
+            box-shadow: 4px 0 15px rgba(0,0,0,0.6);
+            padding: 25px; 
+            box-sizing: border-box;
+            transform: translateX(-100%); transition: transform 0.3s ease-in-out;
+            z-index: 200; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 25px; 
+        }
+        #settings-drawer.open { transform: translateX(0); }
         
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); display: none; z-index: 150;
+        }
+        #overlay.show { display: block; }
+        
+        .drawer-header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 5px; border-bottom: 1px solid #444; padding-bottom: 15px; 
+        }
+        .drawer-title { font-size: 1.3rem; font-weight: bold; color: #eee; }
+        .close-btn { background: none; border: none; color: #aaa; font-size: 1.8rem; cursor: pointer; padding: 0 5px; }
+
+        /* --- 主畫面佈局 --- */
+        .main-container {
+            display: flex; flex-direction: column; 
+            align-items: center; justify-content: space-between; 
+            width: 100%; height: 100%;
+            padding: 10px; box-sizing: border-box;
+        }
+
+        .dashboard {
+            flex-grow: 1; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; width: 100%;
+        }
+
         #speed-display {
             font-weight: bold; line-height: 1;
-            text-shadow: 0 0 10px rgba(0,255,0,0.5);
-            color: #0f0;
-            font-size: 15vh;
-            transition: color 0.2s; margin-bottom: 10px;
+            text-shadow: 0 0 15px rgba(0,255,0,0.6);
+            color: #0f0; font-size: 40vh; margin: 0; padding: 0;
+            transition: color 0.2s;
         }
         body.danger #speed-display { color: #fff; text-shadow: none; }
-        .unit { font-size: 0.3em; color: #aaa; }
+        .unit { font-size: 0.2em; color: #aaa; vertical-align: baseline; }
 
-        .info-area { display: flex; align-items: center; gap: 15px; }
+        .info-area { 
+            display: flex; align-items: center; gap: 15px; 
+            margin-top: -10px; opacity: 0.9;
+        }
         .limit-sign {
-            width: 100px; height: 100px; background-color: #fff;
-            border: 8px solid #cc0000; border-radius: 50%;
+            width: 50px; height: 50px; background-color: #fff;
+            border: 4px solid #cc0000; border-radius: 50%;
             display: flex; justify-content: center; align-items: center;
-            color: #000; font-weight: bold; font-size: 40px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.5); flex-shrink: 0;
+            color: #000; font-weight: bold; font-size: 20px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.5);
         }
         .limit-sign.unknown { border-color: #777; color: #777; }
-        .text-info { text-align: left; font-size: 0.9rem; color: #ccc; display: flex; flex-direction: column; gap: 5px; }
-        
-        .threshold-badge { color: #ffeb3b; border: 1px solid #555; padding: 2px 8px; border-radius: 10px; background: rgba(0,0,0,0.5); display: inline-block; }
+        .threshold-badge { 
+            color: #ffeb3b; border: 1px solid #555; padding: 2px 8px; 
+            border-radius: 10px; background: rgba(0,0,0,0.5); font-size: 0.8rem; 
+        }
         body.warning .threshold-badge { color: #000; border-color: #333; }
+        .limit-source { font-size: 0.7rem; color: #888; margin-left: 5px; }
 
-        /* --- 控制面板 --- */
-        .controls {
-            width: 100%; max-width: 400px;
-            background: rgba(30, 30, 30, 0.8);
-            padding: 20px; border-radius: 15px; text-align: center;
-            margin-bottom: 30px; transition: opacity 0.3s;
+        /* --- 主控區 --- */
+        .primary-controls { 
+            width: 100%; max-width: 320px; 
+            display: flex; flex-direction: column; gap: 8px; 
+            background: rgba(30, 30, 30, 0.5); 
+            padding: 10px; border-radius: 12px; margin-bottom: 10px;
         }
-        .controls.monitoring { opacity: 0.3; }
-        .controls.monitoring:hover { opacity: 1; }
 
-        .input-group { margin-bottom: 15px; text-align: left; }
-        .input-group label { display: block; color: #aaa; font-size: 0.8rem; margin-bottom: 5px; }
-
-        input[type="number"], input[type="text"] { 
-            width: 100%; padding: 12px; font-size: 1.1rem; 
-            border-radius: 8px; border: none; text-align: center; box-sizing: border-box;
+        .quick-presets { display: flex; gap: 6px; width: 100%; }
+        .preset-btn { 
+            background: #444; color: #fff; border: 1px solid #666; 
+            padding: 8px 0; font-size: 0.9rem; border-radius: 6px; flex: 1; 
         }
+        .preset-btn:active { background: #666; }
+
+        .adjust-row { display: flex; align-items: center; gap: 6px; height: 40px; }
+        .adjust-btn { 
+            background: #555; color: white; border: none; 
+            width: 50px; height: 100%; font-size: 1.2rem; border-radius: 6px; cursor: pointer; 
+        }
+        .adjust-btn:active { background: #777; }
         
-        /* 檔案上傳按鈕美化 */
-        .file-upload { position: relative; overflow: hidden; display: inline-block; width: 100%; }
-        .file-upload input[type="file"] {
-            position: absolute; top: 0; right: 0; margin: 0; padding: 0;
-            font-size: 20px; cursor: pointer; opacity: 0; filter: alpha(opacity=0);
-            width: 100%; height: 100%;
-        }
-        .file-btn {
-            background-color: #555; color: white; padding: 10px;
-            border-radius: 8px; display: block; width: 100%;
-            box-sizing: border-box; border: 1px dashed #999;
+        input[type="number"] { 
+            flex-grow: 1; height: 100%; font-size: 1.2rem; font-weight: bold;
+            border-radius: 6px; border: none; text-align: center; 
+            background: #333; color: #fff; padding: 0;
         }
 
-        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
-        button { padding: 15px; font-size: 1.1rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; flex: 1; -webkit-appearance: none; }
-        #test-file-btn { background-color: #ff9800; } 
-        #test-tts-btn { background-color: #28a745; } 
-        #toggle-btn { background-color: #2979ff; }
-        #toggle-btn.active { background-color: #d32f2f; }
-        #status { margin-top: 10px; font-size: 0.8rem; color: #888; }
+        #toggle-btn {
+            width: 100%; padding: 12px; font-size: 1.1rem; border: none;
+            border-radius: 8px; cursor: pointer; font-weight: bold; color: white;
+            background-color: #2979ff; box-shadow: 0 2px 8px rgba(41, 121, 255, 0.3);
+        }
+        #toggle-btn.active { background-color: #d32f2f; box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3); }
+
+        /* --- 設定選單元件 --- */
+        .input-group { text-align: left; width: 100%; }
+        .input-group label { display: block; color: #bbb; font-size: 0.95rem; margin-bottom: 8px; }
+        
+        input[type="text"] { 
+            width: 100%; padding: 12px; font-size: 1rem; 
+            border-radius: 8px; border: 1px solid #555; 
+            background: #333; color: #fff; box-sizing: border-box;
+        }
+        input[type="text"]:focus { border-color: #2979ff; outline: none; }
+
+        .file-upload { position: relative; overflow: hidden; display: block; width: 100%; }
+        .file-upload input[type="file"] { position: absolute; top: 0; right: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .file-btn { 
+            background-color: #333; color: #ddd; padding: 12px; 
+            border-radius: 8px; display: block; text-align: center; 
+            border: 1px dashed #777; font-size: 0.9rem;
+        }
+
+        .drawer-btn { 
+            width: 100%; padding: 12px; font-size: 1rem; border: none; 
+            border-radius: 8px; cursor: pointer; color: white; margin-top: 10px; 
+            font-weight: bold;
+        }
+        #test-file-btn { background-color: #ff9800; }
+        #test-tts-btn { background-color: #28a745; }
+        
+        #status { margin-top: auto; padding-bottom: 10px; font-size: 0.8rem; color: #666; text-align: center; }
 
         @media (orientation: landscape) {
-            body { overflow-y: auto; justify-content: center; }
-            .container { flex-direction: row; gap: 30px; padding: 10px; height: 100%; }
-            .dashboard { flex: 2; flex-direction: row; justify-content: center; gap: 40px; margin-bottom: 0; }
-            #speed-display { font-size: 35vh; order: 1; margin-bottom: 0; }
-            .info-area { flex-direction: column; order: 2; align-items: center; }
-            .limit-sign { width: 18vh; height: 18vh; font-size: 7vh; border-width: 1.2vh; }
-            .controls { flex: 1; max-width: 320px; margin-bottom: 0; display: flex; flex-direction: column; justify-content: center; padding: 15px; }
+            #speed-display { font-size: 35vh; }
+            .main-container { padding: 5px; }
+            .primary-controls { padding: 5px; margin-bottom: 5px; gap: 5px; }
+            /* 橫向時時鐘字體調整 */
+            #clock { font-size: 2rem; top: 25px; right: 25px; }
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <button id="menu-btn" onclick="toggleMenu()">☰</button>
+
+    <div id="clock">--:--</div>
+
+    <div id="overlay" onclick="toggleMenu()"></div>
+
+    <div id="settings-drawer">
+        <div class="drawer-header">
+            <span class="drawer-title">進階設定</span>
+            <button class="close-btn" onclick="toggleMenu()">×</button>
+        </div>
+
+        <div class="input-group">
+            <label>OSM 自動速限</label>
+            <div style="display: flex; align-items: center; gap: 10px; background: #333; padding: 10px; border-radius: 8px;">
+                <input type="checkbox" id="auto-limit-check" checked style="width: 20px; height: 20px; accent-color: #2979ff;"> 
+                <span style="font-size: 1rem; color: #fff;">啟用自動偵測</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>嚴重超速語音 (TTS)</label>
+            <input type="text" id="voice-text" value="嚴重超速！請煞車">
+            <button class="drawer-btn" id="test-tts-btn">🗣️ 測試語音</button>
+        </div>
+
+        <div class="input-group">
+            <label>警示音效 (黃色預警用)</label>
+            <div class="file-upload">
+                <div class="file-btn" id="file-label">📂 更換音效 (預設 sound.mp3)</div>
+                <input type="file" id="sound-upload" accept="audio/*">
+            </div>
+            <button class="drawer-btn" id="test-file-btn">🔊 測試音效</button>
+        </div>
+
+        <div id="status">準備就緒</div>
+    </div>
+
+    <div class="main-container">
+        
         <div class="dashboard">
             <div id="speed-display">0<span class="unit"></span></div>
+            
             <div class="info-area">
-                <div id="visual-limit" class="limit-sign unknown">--</div>
-                <div class="text-info">
-                    <span id="limit-source-text" style="color:#aaa; font-size: 0.8em;">GPS 待命</span>
+                <div id="visual-limit" class="limit-sign unknown">50</div>
+                <div>
                     <div class="threshold-badge">
-                        扣牌門檻: <span id="alarm-threshold-text">--</span>
+                        扣牌: <span id="alarm-threshold-text">88</span>
                     </div>
+                    <span id="limit-source-text" class="limit-source">手動設定</span>
                 </div>
             </div>
         </div>
 
-        <div class="controls" id="controls-panel">
-            <div class="input-group">
-                <label>目前速限 (km/h)</label>
+        <div class="primary-controls">
+            <div class="quick-presets">
+                <button class="preset-btn" onclick="setLimit(30)">30</button>
+                <button class="preset-btn" onclick="setLimit(40)">40</button>
+                <button class="preset-btn" onclick="setLimit(50)">50</button>
+            </div>
+
+            <div class="adjust-row">
+                <button class="adjust-btn" id="btn-minus">-5</button>
                 <input type="number" id="limit-input" value="50">
-            </div>
-            
-            <div class="input-group">
-                <label>嚴重超速語音 (TTS)</label>
-                <input type="text" id="voice-text" value="嚴重超速！請煞車">
+                <button class="adjust-btn" id="btn-plus">+5</button>
             </div>
 
-            <div class="input-group">
-                <label>警示音效 (預設 sound.mp3)</label>
-                <div class="file-upload">
-                    <div class="file-btn" id="file-label">📂 選擇音效 (預設: sound.mp3)</div>
-                    <input type="file" id="sound-upload" accept="audio/*">
-                </div>
-            </div>
-
-            <div style="font-size: 0.9rem; text-align: left; margin-bottom: 10px;">
-                <input type="checkbox" id="auto-limit-check" checked style="width: auto; flex: none;"> 
-                <label for="auto-limit-check">OSM 自動速限</label>
-            </div>
-            
-            <div class="btn-group">
-                <button id="test-file-btn">🔊 音效</button>
-                <button id="test-tts-btn">🗣️ 語音</button>
-            </div>
-            <div class="btn-group">
-                <button id="toggle-btn">🚀 啟動監控</button>
-            </div>
-            
-            <div id="status">準備就緒</div>
+            <button id="toggle-btn">🚀 啟動監控</button>
         </div>
     </div>
 
     <script>
+        // DOM Elements
         const speedDisplay = document.getElementById('speed-display');
         const limitInput = document.getElementById('limit-input');
         const visualLimit = document.getElementById('visual-limit');
@@ -178,9 +280,14 @@
         const toggleBtn = document.getElementById('toggle-btn');
         const testFileBtn = document.getElementById('test-file-btn');
         const testTtsBtn = document.getElementById('test-tts-btn');
+        const btnMinus = document.getElementById('btn-minus');
+        const btnPlus = document.getElementById('btn-plus');
+        const clockEl = document.getElementById('clock');
+
         const statusDiv = document.getElementById('status');
         const autoLimitCheck = document.getElementById('auto-limit-check');
-        const controlsPanel = document.getElementById('controls-panel');
+        const drawer = document.getElementById('settings-drawer');
+        const overlay = document.getElementById('overlay');
         const body = document.body;
 
         let watchId = null;
@@ -195,9 +302,19 @@
         
         const synth = window.speechSynthesis;
 
-        // 1. 無聲背景 (CarPlay Keep Alive)
+        // --- 時鐘功能 ---
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            clockEl.textContent = `${hours}:${minutes}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock(); // 初始化立即執行
+
+        // 1. 無聲背景音樂
         const silentAudio = new Audio();
-        silentAudio.src = "data:audio/mp3;base64,SUQzBAAAAAABAFRYWFQAAAASAAADbWFqb3JfYnJhbmQAbXA0MgBUWFhUAAAAEQAAA21pbm9yX3ZlcnNpb24AMABUWFhUAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzb21tcDQyAFRTU0UAAAAPAAADTGF2ZjU3LjU2LjEwMAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWgAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
+        silentAudio.src = "data:audio/mp3;base64,SUQzBAAAAAABAFRYWFQAAAASAAADbWFqb3JfYnJhbmQAbXA0MgBUWFhUAAAAEQAAA21pbm9yX3ZlcnNpb24AMABUWFhUAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzb21tcDQyAFRTU0UAAAAPAAADTGF2ZjU3LjU2LjEwMAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWgAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
         silentAudio.loop = true;
         silentAudio.volume = 0.01; 
 
@@ -236,9 +353,43 @@
         }
         initSound();
 
+        // 初始化更新
+        updateVisualSign(50, false);
         updateThresholdDisplay();
 
-        // 檔案上傳
+        // --- 漢堡選單邏輯 ---
+        window.toggleMenu = function() {
+            drawer.classList.toggle('open');
+            if (drawer.classList.contains('open')) {
+                overlay.style.display = 'block';
+            } else {
+                overlay.style.display = 'none';
+            }
+        };
+
+        // --- UI 操作邏輯 ---
+        window.setLimit = function(val) {
+            limitInput.value = val;
+            updateVisualSign(val, false);
+            updateThresholdDisplay();
+        };
+
+        btnMinus.addEventListener('click', () => {
+            let current = parseInt(limitInput.value) || 0;
+            current = Math.max(0, current - 5);
+            limitInput.value = current;
+            updateVisualSign(current, false);
+            updateThresholdDisplay();
+        });
+
+        btnPlus.addEventListener('click', () => {
+            let current = parseInt(limitInput.value) || 0;
+            current = current + 5;
+            limitInput.value = current;
+            updateVisualSign(current, false);
+            updateThresholdDisplay();
+        });
+
         soundUpload.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
@@ -256,20 +407,15 @@
             beepAudio.play().catch(e => console.log("Sound error", e));
         }
 
-        // --- 按鈕 ---
         testFileBtn.addEventListener('click', () => {
             silentAudio.play().catch(()=>{}); 
             playCustomSound();
-            statusDiv.textContent = "🔊 播放警示音...";
-            setTimeout(() => statusDiv.textContent = "準備就緒", 1000);
         });
 
         testTtsBtn.addEventListener('click', () => {
             silentAudio.play().catch(()=>{});
             playCustomSound();
             setTimeout(() => { speak(voiceTextInput.value || "測試語音"); }, 1000);
-            statusDiv.textContent = "🗣️ 播放語音...";
-            setTimeout(() => statusDiv.textContent = "準備就緒", 2000);
         });
 
         toggleBtn.addEventListener('click', () => {
@@ -296,17 +442,9 @@
         });
 
         async function startMonitoring() {
-            // 1. 確保音訊通道開啟
             silentAudio.play().catch(()=>{});
-            
-            // 2. 播放一聲警示音 (喚醒 CarPlay)
             playCustomSound();
-            
-            // 3. 延遲 0.8秒後，語音播報「偵測開始」
-            setTimeout(() => {
-                speak("偵測開始");
-            }, 800);
-
+            setTimeout(() => { speak("偵測開始"); }, 800);
             await requestWakeLock();
 
             if (navigator.geolocation) {
@@ -317,7 +455,6 @@
                 isMonitoring = true;
                 toggleBtn.textContent = "停止監控";
                 toggleBtn.classList.add('active');
-                controlsPanel.classList.add('monitoring'); 
             } else {
                 alert("不支援 GPS");
             }
@@ -330,7 +467,6 @@
             isMonitoring = false;
             toggleBtn.textContent = "啟動監控";
             toggleBtn.classList.remove('active');
-            controlsPanel.classList.remove('monitoring');
             speedDisplay.innerHTML = `0<span class="unit"></span>`;
             body.classList.remove('danger');
             body.classList.remove('warning');
@@ -343,8 +479,7 @@
             const speedKmh = speedMps * 3.6;
 
             speedDisplay.innerHTML = `${Math.round(speedKmh)}<span class="unit"></span>`;
-            statusDiv.textContent = `GPS: ±${Math.round(position.coords.accuracy)}m`;
-
+            
             const now = Date.now();
             if (autoLimitCheck.checked && (now - lastOsmCheckTime > 15000) && speedKmh > 10) {
                 fetchSpeedLimit(position.coords.latitude, position.coords.longitude);
@@ -357,7 +492,6 @@
             const baseLimit = parseFloat(limitInput.value);
             const alarmTrigger = baseLimit + TOLERANCE; 
             const preWarningStart = alarmTrigger - PRE_WARNING_BUFFER; 
-
             const now = Date.now();
 
             if (currentSpeed > alarmTrigger) {
@@ -383,10 +517,8 @@
 
         async function fetchSpeedLimit(lat, lon) {
             limitSourceText.textContent = "更新中...";
-            // 只查詢速限，移除測速照相
             const query = `[out:json];way[maxspeed](around:20,${lat},${lon});out tags;`;
             const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
-
             try {
                 const response = await fetch(url);
                 const data = await response.json();
@@ -400,8 +532,8 @@
                         updateThresholdDisplay();
                     }
                 } else {
-                    limitSourceText.textContent = "無 OSM 資料";
-                    updateVisualSign(limitInput.value, false);
+                    limitSourceText.textContent = "無 OSM";
+                    limitSourceText.style.color = "#aaa";
                 }
             } catch (err) { limitSourceText.textContent = "連線失敗"; }
         }
