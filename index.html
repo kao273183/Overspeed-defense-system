@@ -237,8 +237,10 @@
     </div>
 
     <div class="main-container">
+        
         <div class="dashboard">
             <div id="speed-display">0<span class="unit"></span></div>
+            
             <div class="info-area">
                 <div id="visual-limit" class="limit-sign unknown">50</div>
                 <div>
@@ -256,11 +258,13 @@
                 <button class="preset-btn" onclick="setLimit(40)">40</button>
                 <button class="preset-btn" onclick="setLimit(50)">50</button>
             </div>
+
             <div class="adjust-row">
                 <button class="adjust-btn" id="btn-minus">-5</button>
                 <input type="number" id="limit-input" value="50">
                 <button class="adjust-btn" id="btn-plus">+5</button>
             </div>
+
             <button id="toggle-btn">🚀 啟動監控</button>
         </div>
     </div>
@@ -361,16 +365,13 @@
         // 預設更新
         updateVisualSign(50, false);
         updateThresholdDisplay();
-        // 預先繪製一次 PiP 畫面，避免 Canvas 空白
         updatePiP(0, 50);
 
-        // --- PiP 子母畫面邏輯 (修正版) ---
+        // --- PiP 子母畫面邏輯 ---
         function updatePiP(currentSpeed, limit) {
-            // 1. 清空畫布
             pipCtx.fillStyle = '#000000';
             pipCtx.fillRect(0, 0, 512, 512);
 
-            // 2. 判斷背景色
             const baseLimit = parseInt(limit) || 0;
             const alarmTrigger = baseLimit + TOLERANCE;
             const preWarningStart = alarmTrigger - PRE_WARNING_BUFFER;
@@ -384,14 +385,12 @@
                 pipCtx.fillRect(0, 0, 512, 512);
             }
 
-            // 3. 繪製時速
             pipCtx.fillStyle = (bgColor === '#b71c1c') ? '#ffffff' : (bgColor === '#fbc02d' ? '#000000' : '#00ff00');
             pipCtx.font = 'bold 250px Arial';
             pipCtx.textAlign = 'center';
             pipCtx.textBaseline = 'middle';
             pipCtx.fillText(Math.round(currentSpeed), 256, 200);
 
-            // 4. 繪製限速牌
             pipCtx.beginPath();
             pipCtx.arc(256, 400, 70, 0, 2 * Math.PI);
             pipCtx.fillStyle = '#ffffff';
@@ -404,28 +403,30 @@
             pipCtx.fillText(baseLimit, 256, 403);
         }
 
-        // 啟動 PiP (修正 Metadata 錯誤)
+        // 啟動 PiP (含防呆機制)
         pipBtn.addEventListener('click', async () => {
+            // 1. 防呆：檢查是否已啟動監控
+            if (!isMonitoring) {
+                alert("⚠️ 請先點擊主畫面的「🚀 啟動監控」\n這樣時速才會開始運作喔！");
+                toggleMenu(); // 關閉選單，導引使用者去按啟動
+                return;
+            }
+
             try {
-                // 1. 確保 Canvas 有內容
                 updatePiP(0, limitInput.value);
 
-                // 2. 如果已經在 PiP 中，則關閉
                 if (document.pictureInPictureElement) {
                     await document.exitPictureInPicture();
                     return;
                 }
 
-                // 3. 建立串流 (如果還沒有)
                 if (!pipVideo.srcObject) {
                     const stream = pipCanvas.captureStream(30);
                     pipVideo.srcObject = stream;
                 }
 
-                // 4. 播放並等待 Metadata 載入完成
                 await pipVideo.play();
 
-                // 5. 確保 ReadyState 足夠
                 if (pipVideo.readyState >= 1) {
                     await pipVideo.requestPictureInPicture();
                 } else {
@@ -434,11 +435,10 @@
                     };
                 }
                 
-                // 關閉選單，讓使用者看到效果
                 toggleMenu();
 
             } catch (err) {
-                alert("無法啟動子母畫面：\n1. 請確認使用 Safari/Chrome\n2. 必須在 HTTPS 環境下\n3. 錯誤: " + err.message);
+                alert("無法啟動子母畫面 (瀏覽器不支援或權限不足)");
                 console.error(err);
             }
         });
@@ -457,7 +457,7 @@
             limitInput.value = val;
             updateVisualSign(val, false);
             updateThresholdDisplay();
-            updatePiP(0, val); // 即時更新 PiP
+            updatePiP(0, val);
         };
 
         btnMinus.addEventListener('click', () => {
@@ -560,7 +560,7 @@
             body.classList.remove('danger');
             body.classList.remove('warning');
             statusDiv.textContent = "已暫停";
-            updatePiP(0, limitInput.value); // Reset PiP
+            updatePiP(0, limitInput.value);
         }
 
         function updatePosition(position) {
@@ -577,7 +577,7 @@
             }
             
             checkOverSpeed(speedKmh);
-            updatePiP(speedKmh, limitInput.value); // 更新 PiP 畫面
+            updatePiP(speedKmh, limitInput.value);
         }
 
         function checkOverSpeed(currentSpeed) {
@@ -622,7 +622,7 @@
                         limitInput.value = limitNumber; 
                         updateVisualSign(limitNumber, true);
                         updateThresholdDisplay();
-                        updatePiP(0, limitNumber); // Update PiP Limit
+                        updatePiP(0, limitNumber);
                     }
                 } else {
                     limitSourceText.textContent = "無 OSM";
