@@ -27,38 +27,30 @@
         body.warning .text-info { color: #333; }
         @keyframes flash-yellow { from { background-color: #fbc02d; } to { background-color: #ffeb3b; } }
 
-        /* --- 漢堡選單按鈕 (左上) --- */
+        /* --- 漢堡選單按鈕 --- */
         #menu-btn {
             position: absolute; top: 15px; left: 15px;
             font-size: 1.8rem; background: none; border: none; color: #fff;
             cursor: pointer; z-index: 100; padding: 5px; opacity: 0.7;
         }
 
-        /* --- [新增] 右上角時鐘 --- */
+        /* --- 右上角時鐘 --- */
         #clock {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            font-family: 'Courier New', Courier, monospace; /* 稍微帶點數位感 */
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: #ddd;
-            z-index: 90;
-            background: rgba(255, 255, 255, 0.1); /* 輕微背景增加可讀性 */
-            padding: 5px 15px;
-            border-radius: 8px;
+            position: absolute; top: 20px; right: 20px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.8rem; font-weight: bold; color: #ddd; z-index: 90;
+            background: rgba(255, 255, 255, 0.1); padding: 5px 15px; border-radius: 8px;
             letter-spacing: 2px;
         }
 
-        /* --- 側邊設定欄 (漢堡選單內容) --- */
+        /* --- 側邊設定欄 --- */
         #settings-drawer {
             position: fixed; top: 0; left: 0;
             width: 85%; max-width: 350px; height: 100%;
             background: rgba(25, 25, 25, 0.98); 
             backdrop-filter: blur(15px);
             box-shadow: 4px 0 15px rgba(0,0,0,0.6);
-            padding: 25px; 
-            box-sizing: border-box;
+            padding: 25px; box-sizing: border-box;
             transform: translateX(-100%); transition: transform 0.3s ease-in-out;
             z-index: 200; overflow-y: auto;
             display: flex; flex-direction: column; gap: 25px; 
@@ -180,14 +172,18 @@
         }
         #test-file-btn { background-color: #ff9800; }
         #test-tts-btn { background-color: #28a745; }
+        #pip-btn { background-color: #9c27b0; } /* 紫色 PiP 按鈕 */
         
         #status { margin-top: auto; padding-bottom: 10px; font-size: 0.8rem; color: #666; text-align: center; }
+
+        /* 隱藏的 Canvas 和 Video (PiP 用) */
+        #pip-canvas { display: none; }
+        #pip-video { position: absolute; top: -9999px; left: -9999px; }
 
         @media (orientation: landscape) {
             #speed-display { font-size: 35vh; }
             .main-container { padding: 5px; }
             .primary-controls { padding: 5px; margin-bottom: 5px; gap: 5px; }
-            /* 橫向時時鐘字體調整 */
             #clock { font-size: 2rem; top: 25px; right: 25px; }
         }
     </style>
@@ -198,12 +194,20 @@
 
     <div id="clock">--:--</div>
 
+    <canvas id="pip-canvas" width="512" height="512"></canvas>
+    <video id="pip-video" muted playsinline></video>
+
     <div id="overlay" onclick="toggleMenu()"></div>
 
     <div id="settings-drawer">
         <div class="drawer-header">
             <span class="drawer-title">進階設定</span>
             <button class="close-btn" onclick="toggleMenu()">×</button>
+        </div>
+
+        <div class="input-group">
+            <label>顯示模式</label>
+            <button class="drawer-btn" id="pip-btn">📺 開啟子母畫面 (PiP)</button>
         </div>
 
         <div class="input-group">
@@ -283,12 +287,18 @@
         const btnMinus = document.getElementById('btn-minus');
         const btnPlus = document.getElementById('btn-plus');
         const clockEl = document.getElementById('clock');
+        const pipBtn = document.getElementById('pip-btn');
 
         const statusDiv = document.getElementById('status');
         const autoLimitCheck = document.getElementById('auto-limit-check');
         const drawer = document.getElementById('settings-drawer');
         const overlay = document.getElementById('overlay');
         const body = document.body;
+
+        // PiP Elements
+        const pipCanvas = document.getElementById('pip-canvas');
+        const pipCtx = pipCanvas.getContext('2d');
+        const pipVideo = document.getElementById('pip-video');
 
         let watchId = null;
         let wakeLock = null;
@@ -310,7 +320,7 @@
             clockEl.textContent = `${hours}:${minutes}`;
         }
         setInterval(updateClock, 1000);
-        updateClock(); // 初始化立即執行
+        updateClock(); 
 
         // 1. 無聲背景音樂
         const silentAudio = new Audio();
@@ -342,7 +352,6 @@
         function initSound() {
             beepAudio.src = DEFAULT_SOUND_PATH;
             beepAudio.onerror = function() {
-                console.log("切換為預設電子音");
                 fileLabel.textContent = "⚠️ 無 sound.mp3 (用預設音)";
                 beepAudio.src = makeDefaultBeep();
             };
@@ -353,9 +362,71 @@
         }
         initSound();
 
-        // 初始化更新
+        // 預設介面更新
         updateVisualSign(50, false);
         updateThresholdDisplay();
+
+        // --- PiP 子母畫面邏輯 ---
+        function updatePiP(currentSpeed, limit) {
+            // 1. 清空畫布
+            pipCtx.fillStyle = '#000000';
+            pipCtx.fillRect(0, 0, 512, 512);
+
+            // 2. 判斷背景色 (狀態)
+            const baseLimit = parseInt(limit) || 0;
+            const alarmTrigger = baseLimit + TOLERANCE;
+            const preWarningStart = alarmTrigger - PRE_WARNING_BUFFER;
+            let bgColor = '#000000';
+            
+            if (currentSpeed > alarmTrigger) bgColor = '#b71c1c'; // Red
+            else if (currentSpeed > preWarningStart) bgColor = '#fbc02d'; // Yellow
+
+            if (bgColor !== '#000000') {
+                pipCtx.fillStyle = bgColor;
+                pipCtx.fillRect(0, 0, 512, 512);
+            }
+
+            // 3. 繪製時速 (大字)
+            pipCtx.fillStyle = (bgColor === '#b71c1c') ? '#ffffff' : (bgColor === '#fbc02d' ? '#000000' : '#00ff00');
+            pipCtx.font = 'bold 250px Arial';
+            pipCtx.textAlign = 'center';
+            pipCtx.textBaseline = 'middle';
+            pipCtx.fillText(Math.round(currentSpeed), 256, 200);
+
+            // 4. 繪製限速牌 (下方小圈)
+            // 白底圓
+            pipCtx.beginPath();
+            pipCtx.arc(256, 400, 70, 0, 2 * Math.PI);
+            pipCtx.fillStyle = '#ffffff';
+            pipCtx.fill();
+            // 紅框
+            pipCtx.lineWidth = 10;
+            pipCtx.strokeStyle = '#cc0000';
+            pipCtx.stroke();
+            // 限速數字
+            pipCtx.fillStyle = '#000000';
+            pipCtx.font = 'bold 60px Arial';
+            pipCtx.fillText(baseLimit, 256, 403);
+        }
+
+        // 啟動 PiP
+        pipBtn.addEventListener('click', async () => {
+            try {
+                // 畫布串流到影片
+                if (pipVideo.srcObject) {
+                    // 如果已經在播，就開窗
+                    await pipVideo.requestPictureInPicture();
+                } else {
+                    const stream = pipCanvas.captureStream(30); // 30 FPS
+                    pipVideo.srcObject = stream;
+                    await pipVideo.play();
+                    await pipVideo.requestPictureInPicture();
+                }
+            } catch (err) {
+                alert("無法啟動子母畫面 (可能瀏覽器不支援或需要 HTTPS)");
+                console.error(err);
+            }
+        });
 
         // --- 漢堡選單邏輯 ---
         window.toggleMenu = function() {
@@ -471,6 +542,9 @@
             body.classList.remove('danger');
             body.classList.remove('warning');
             statusDiv.textContent = "已暫停";
+            
+            // 重置 PiP 畫面
+            updatePiP(0, limitInput.value);
         }
 
         function updatePosition(position) {
@@ -485,7 +559,11 @@
                 fetchSpeedLimit(position.coords.latitude, position.coords.longitude);
                 lastOsmCheckTime = now;
             }
+            
             checkOverSpeed(speedKmh);
+            
+            // 更新 PiP 畫面
+            updatePiP(speedKmh, limitInput.value);
         }
 
         function checkOverSpeed(currentSpeed) {
