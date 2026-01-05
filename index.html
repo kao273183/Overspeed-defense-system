@@ -127,19 +127,38 @@
             padding: 10px; border-radius: 12px; margin-bottom: 10px;
         }
 
-        .quick-presets { display: flex; gap: 6px; width: 100%; }
-        .preset-btn { 
-            background: #444; color: #fff; border: 1px solid #666; 
-            padding: 8px 0; font-size: 0.9rem; border-radius: 6px; flex: 1; 
-        }
-        .preset-btn:active { background: #666; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; color: #aaa; font-size: 0.8rem; margin-bottom: 5px; }
 
-        .adjust-row { display: flex; align-items: center; gap: 6px; height: 40px; }
-        .adjust-btn { 
-            background: #555; color: white; border: none; 
-            width: 50px; height: 100%; font-size: 1.2rem; border-radius: 6px; cursor: pointer; 
+        /* 輸入框樣式 */
+        input[type="number"], input[type="text"] { 
+            width: 100%; padding: 12px; font-size: 1.1rem; 
+            border-radius: 8px; border: none; text-align: center; box-sizing: border-box;
         }
-        .adjust-btn:active { background: #777; }
+
+        /* --- 新增：快捷按鈕區 --- */
+        .quick-presets {
+            display: flex; gap: 10px; margin-bottom: 8px; width: 100%;
+        }
+        .preset-btn {
+            background: #555; color: #fff; border: 1px solid #777;
+            padding: 8px; font-size: 1rem; border-radius: 8px; flex: 1;
+        }
+        .preset-btn:active { background: #777; }
+
+        /* --- 新增：微調按鈕列 --- */
+        .adjust-row {
+            display: flex; align-items: center; gap: 5px;
+        }
+        .adjust-btn {
+            background: #666; color: white; border: none;
+            width: 60px; height: 46px; /* 與 input 等高 */
+            font-size: 1.2rem; border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .adjust-btn:active { background: #888; }
+        /* 讓中間的 input 填滿剩餘空間 */
+        .adjust-row input { flex-grow: 1; margin: 0; }
         
         input[type="number"] { 
             flex-grow: 1; height: 100%; font-size: 1.2rem; font-weight: bold;
@@ -248,17 +267,26 @@
             </div>
         </div>
 
-        <div class="primary-controls">
-            <div class="quick-presets">
-                <button class="preset-btn" onclick="setLimit(30)">30</button>
-                <button class="preset-btn" onclick="setLimit(40)">40</button>
-                <button class="preset-btn" onclick="setLimit(50)">50</button>
-            </div>
+        <div class="controls" id="controls-panel">
+            <div class="input-group">
+                <label>目前速限 (km/h)</label>
+                
+                <div class="quick-presets">
+                    <button class="preset-btn" onclick="setLimit(30)">30</button>
+                    <button class="preset-btn" onclick="setLimit(40)">40</button>
+                    <button class="preset-btn" onclick="setLimit(50)">50</button>
+                </div>
 
-            <div class="adjust-row">
-                <button class="adjust-btn" id="btn-minus">-5</button>
-                <input type="number" id="limit-input" value="50">
-                <button class="adjust-btn" id="btn-plus">+5</button>
+                <div class="adjust-row">
+                    <button class="adjust-btn" id="btn-minus">-5</button>
+                    <input type="number" id="limit-input" value="50">
+                    <button class="adjust-btn" id="btn-plus">+5</button>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label>嚴重超速語音 (TTS)</label>
+                <input type="text" id="voice-text" value="嚴重超速！請煞車">
             </div>
 
             <button id="toggle-btn">🚀 啟動監控</button>
@@ -282,7 +310,6 @@
         const testTtsBtn = document.getElementById('test-tts-btn');
         const btnMinus = document.getElementById('btn-minus');
         const btnPlus = document.getElementById('btn-plus');
-        const clockEl = document.getElementById('clock');
 
         const statusDiv = document.getElementById('status');
         const autoLimitCheck = document.getElementById('auto-limit-check');
@@ -357,23 +384,16 @@
         updateVisualSign(50, false);
         updateThresholdDisplay();
 
-        // --- 漢堡選單邏輯 ---
-        window.toggleMenu = function() {
-            drawer.classList.toggle('open');
-            if (drawer.classList.contains('open')) {
-                overlay.style.display = 'block';
-            } else {
-                overlay.style.display = 'none';
-            }
-        };
-
         // --- UI 操作邏輯 ---
+
+        // 快捷鍵設定
         window.setLimit = function(val) {
             limitInput.value = val;
             updateVisualSign(val, false);
             updateThresholdDisplay();
         };
 
+        // -5 按鈕
         btnMinus.addEventListener('click', () => {
             let current = parseInt(limitInput.value) || 0;
             current = Math.max(0, current - 5);
@@ -382,6 +402,7 @@
             updateThresholdDisplay();
         });
 
+        // +5 按鈕
         btnPlus.addEventListener('click', () => {
             let current = parseInt(limitInput.value) || 0;
             current = current + 5;
@@ -390,6 +411,7 @@
             updateThresholdDisplay();
         });
 
+        // 檔案上傳
         soundUpload.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
@@ -517,6 +539,7 @@
 
         async function fetchSpeedLimit(lat, lon) {
             limitSourceText.textContent = "更新中...";
+            // 只查詢速限
             const query = `[out:json];way[maxspeed](around:20,${lat},${lon});out tags;`;
             const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
             try {
