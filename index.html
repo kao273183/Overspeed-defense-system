@@ -404,11 +404,18 @@
         }
 
         // 啟動 PiP (含防呆機制)
-        pipBtn.addEventListener('click', async () => {
+       pipBtn.addEventListener('click', async () => {
             // 1. 防呆：檢查是否已啟動監控
             if (!isMonitoring) {
                 alert("⚠️ 請先點擊主畫面的「🚀 啟動監控」\n這樣時速才會開始運作喔！");
-                toggleMenu(); // 關閉選單，導引使用者去按啟動
+                toggleMenu(); 
+                return;
+            }
+
+            // 2. iOS/Safari 核心檢測：檢查是否支援 captureStream
+            // iPhone 的瀏覽器核心 (WebKit) 目前不支援將 Canvas 轉為影片流
+            if (typeof pipCanvas.captureStream !== 'function') {
+                alert("⚠️ 很抱歉，iPhone (iOS) 系統不支援「網頁畫布轉影片」技術，因此無法使用子母畫面。\n\n（這是 Apple 的系統限制，目前僅 Android 手機或電腦版 Chrome 支援此功能）");
                 return;
             }
 
@@ -438,7 +445,7 @@
                 toggleMenu();
 
             } catch (err) {
-                alert("無法啟動子母畫面 (瀏覽器不支援或權限不足)");
+                alert("無法啟動子母畫面 (瀏覽器不支援或權限不足)\n錯誤: " + err.message);
                 console.error(err);
             }
         });
