@@ -128,6 +128,13 @@
         }
         .btn-set-speed:hover { background: #666; }
         
+        /* 說明 Modal 專用樣式 */
+        .help-content { padding: 20px; color: #ddd; line-height: 1.6; overflow-y: auto; }
+        .help-content h3 { color: #007aff; margin-top: 0; }
+        .help-content ul { padding-left: 20px; margin-bottom: 20px; }
+        .help-content li { margin-bottom: 10px; }
+        .help-footer { margin-top: 20px; text-align: center; font-size: 0.8rem; color: #666; border-top: 1px solid #333; padding-top: 10px; }
+
         /* 地圖 Modal */
         #map-container { flex: 1; width: 100%; position: relative; }
         #trip-map { width: 100%; height: 100%; background: #000; }
@@ -173,9 +180,9 @@
             color: #000; font-weight: bold; font-size: 36px;
             box-shadow: 0 0 15px rgba(0,0,0,0.5); font-family: Arial, sans-serif; transition: all 0.3s;
         }
-        .limit-sign.unknown { border-color: #777; color: #777; font-size: 40px; } /* 問號時字體 */
+        .limit-sign.unknown { border-color: #777; color: #777; font-size: 40px; } 
         
-        /* 回報按鈕 (當速限未知時顯示) */
+        /* 回報按鈕 */
         #report-btn {
             margin-top: 10px; background: #ff9800; color: #000; font-weight: bold;
             border: none; padding: 8px 16px; border-radius: 20px; font-size: 1rem;
@@ -233,6 +240,7 @@
         #pip-btn { background-color: #9c27b0; }
         #history-btn { background-color: #007aff; }
         #osm-report-btn { background-color: #e91e63; }
+        #help-btn { background-color: #607d8b; }
         #status { margin-top: auto; padding-bottom: 10px; font-size: 0.8rem; color: #666; text-align: center; }
         #pip-canvas { display: none; }
         #pip-video { position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; }
@@ -268,6 +276,12 @@
             <span class="drawer-title">進階設定</span>
             <button class="close-btn" onclick="toggleMenu()">×</button>
         </div>
+        
+        <div class="input-group">
+            <label>系統資訊</label>
+            <button class="drawer-btn" id="help-btn" onclick="showHelp()">ℹ️ 使用說明 / 關於</button>
+        </div>
+
         <div class="input-group">
             <label>資料管理</label>
             <button class="drawer-btn" id="history-btn" onclick="showHistory()">📊 查看行車紀錄</button>
@@ -301,6 +315,45 @@
                 <button class="close-btn" onclick="closeHistory()" style="color:#fff;font-size:1.5rem;">×</button>
             </div>
             <div class="history-list" id="history-list"></div>
+        </div>
+    </div>
+
+    <div id="help-modal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="history-header">
+                <span>關於本系統</span>
+                <button class="close-btn" onclick="closeHelp()" style="color:#fff;font-size:1.5rem;">×</button>
+            </div>
+            <div class="help-content">
+                <h3>🚀 如何開始？</h3>
+                <ul>
+                    <li>請務必點擊主畫面的藍色 <b>「🚀 啟動偵測」</b> 按鈕，才能開始背景監控與警報。</li>
+                    <li>第一次啟動時，請允許 <b>GPS 權限</b> 與 <b>音效播放</b>。</li>
+                </ul>
+
+                <h3>🔊 警報模式</h3>
+                <ul>
+                    <li><b>黃色預警：</b> 超過速限但未達扣牌標準，發出短促「嗶嗶聲」。</li>
+                    <li><b>紅色警報：</b> 超過扣牌標準 (速限+38)，螢幕閃爍並語音大喊「嚴重超速」。</li>
+                </ul>
+
+                <h3>📍 缺漏回報功能</h3>
+                <ul>
+                    <li><b>一鍵標記：</b> 當速限顯示「?」或「預設(無資)」時，點擊橘色 <b>「📍 標記缺漏」</b> 按鈕，系統會自動記下座標。</li>
+                    <li><b>事後補填：</b> 回家後打開選單中的 <b>「📝 查看缺漏回報」</b>，可補上正確速限或刪除。</li>
+                    <li><b>自動紀錄：</b> 在設定中勾選「自動紀錄缺漏」，行駛中無需操作，系統會自動記錄未知路段。</li>
+                </ul>
+
+                <h3>⚠️ 注意事項</h3>
+                <ul>
+                    <li>本網頁版具備「防休眠」功能，但請盡量保持螢幕開啟以獲得最佳 GPS 訊號。</li>
+                    <li>速限資料來自 OpenStreetMap (OSM)，僅供參考，請以實際路況為準。</li>
+                </ul>
+                
+                <div class="help-footer">
+                    Web Version 1.1<br>Designed for Safe Driving
+                </div>
+            </div>
         </div>
     </div>
 
@@ -362,7 +415,7 @@
         const clockEl = document.getElementById('clock');
         const statusDiv = document.getElementById('status');
         const autoLimitCheck = document.getElementById('auto-limit-check');
-        const autoLogCheck = document.getElementById('auto-log-check'); // 新增
+        const autoLogCheck = document.getElementById('auto-log-check'); 
         const drawer = document.getElementById('settings-drawer');
         const overlay = document.getElementById('overlay');
         const body = document.body;
@@ -371,6 +424,8 @@
         const historyListEl = document.getElementById('history-list');
         const modalTitle = document.getElementById('modal-title');
         const mapModal = document.getElementById('map-modal');
+        const helpModal = document.getElementById('help-modal'); // 新增
+        
         const pipCanvas = document.getElementById('pip-canvas');
         const pipCtx = pipCanvas.getContext('2d');
         const pipVideo = document.getElementById('pip-video');
@@ -399,6 +454,14 @@
         const PRE_WARNING_BUFFER = 5; 
         const synth = window.speechSynthesis;
 
+        // --- 初始化檢查 (首次使用自動跳出說明) ---
+        window.addEventListener('load', () => {
+            if (!localStorage.getItem('hasSeenHelp')) {
+                showHelp();
+                localStorage.setItem('hasSeenHelp', 'true');
+            }
+        });
+
         // --- 時鐘 ---
         function updateClock() {
             const now = new Date();
@@ -411,7 +474,7 @@
 
         // --- 音效 ---
         const silentAudio = new Audio();
-        silentAudio.src = "data:audio/mp3;base64,SUQzBAAAAAABAFRYWFQAAAASAAADbWFqb3JfYnJhbmQAbXA0MgBUWFhUAAAAEQAAA21pbm9yX3ZlcnNpb24AMABUWFhUAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzb21tcDQyAFRTU0UAAAAPAAADTGF2ZjU3LjU2LjEwMAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWgAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
+        silentAudio.src = "data:audio/mp3;base64,SUQzBAAAAAABAFRYWFQAAAASAAADbWFqb3JfYnJhbmQAbXA0MgBUWFhUAAAAEQAAA21pbm9yX3ZlcnNpb24AMABUWFhUAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzb21tcDQyAFRTU0UAAAAPAAADTGF2ZjU3LjU2LjEwMAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWgAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
         silentAudio.loop = true; silentAudio.volume = 0.01; 
 
         let beepAudio = new Audio('./sound.mp3');
@@ -432,11 +495,20 @@
             else overlay.style.display = 'none';
         };
 
-        // --- 缺漏回報系統 (一鍵標記 + 自動紀錄) ---
+        // --- 說明視窗邏輯 ---
+        window.showHelp = function() {
+            // 如果從選單打開，先關選單
+            if(drawer.classList.contains('open')) toggleMenu();
+            helpModal.classList.add('show');
+        }
+        window.closeHelp = function() {
+            helpModal.classList.remove('show');
+        }
+
+        // --- 缺漏回報系統 ---
         let currentMissingLat = null;
         let currentMissingLon = null;
 
-        // 手動快速標記
         window.quickMarkMissing = function() {
             if (!currentMissingLat || !currentMissingLon) {
                 alert("尚未定位，無法標記");
@@ -457,7 +529,6 @@
 
         function saveCustomLimit(lat, lon, limit) {
             let reports = JSON.parse(localStorage.getItem('osm_reports') || "[]");
-            // 檢查重複 (極近距離不重複存)
             const exists = reports.find(r => Math.abs(r.lat - lat) < 0.0001 && Math.abs(r.lon - lon) < 0.0001);
             if (exists) {
                 if(limit !== null) exists.limit = limit; 
@@ -472,7 +543,6 @@
                 address: locationDisplay.textContent.replace('📍 ', '')
             };
             reports.push(newReport);
-            // 限制數量避免 LocalStorage 爆炸 (最多100筆)
             if (reports.length > 100) reports.shift();
             localStorage.setItem('osm_reports', JSON.stringify(reports));
         }
@@ -792,7 +862,7 @@
             updateThresholdDisplay();
             updatePiP(0, defaultVal);
 
-            // [New] 自動紀錄邏輯
+            // 自動紀錄邏輯
             if (autoLogCheck.checked && lat && lon) {
                  saveCustomLimit(lat, lon, null); // 存入 null 待填
             }
