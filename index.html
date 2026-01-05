@@ -122,6 +122,11 @@
             background: #28a745; color: white; border: none; padding: 6px 12px; 
             border-radius: 6px; cursor: pointer; font-size: 0.8rem; text-decoration: none; display:inline-block;
         }
+        .btn-set-speed {
+            background: #444; color: #fff; border: 1px solid #666; padding: 5px 10px;
+            margin-right: 5px; border-radius: 5px; cursor: pointer;
+        }
+        .btn-set-speed:hover { background: #666; }
         
         /* 地圖 Modal */
         #map-container { flex: 1; width: 100%; position: relative; }
@@ -173,9 +178,10 @@
         /* 回報按鈕 (當速限未知時顯示) */
         #report-btn {
             margin-top: 10px; background: #ff9800; color: #000; font-weight: bold;
-            border: none; padding: 5px 10px; border-radius: 15px; font-size: 0.8rem;
-            cursor: pointer; display: none; animation: pop 0.3s ease-out;
+            border: none; padding: 8px 16px; border-radius: 20px; font-size: 1rem;
+            cursor: pointer; display: none; animation: pop 0.3s ease-out; box-shadow: 0 0 10px #ff9800;
         }
+        #report-btn:active { transform: scale(0.95); }
         @keyframes pop { from {transform: scale(0);} to {transform: scale(1);} }
 
         .threshold-info { display: flex; flex-direction: column; align-items: flex-start; }
@@ -269,9 +275,15 @@
         </div>
         <div class="input-group">
             <label>OSM 自動速限</label>
-            <div style="display: flex; align-items: center; gap: 10px; background: #333; padding: 10px; border-radius: 8px;">
-                <input type="checkbox" id="auto-limit-check" checked style="width: 20px; height: 20px; accent-color: #2979ff;"> 
-                <span style="font-size: 1rem; color: #fff;">啟用自動偵測</span>
+            <div style="display: flex; flex-direction: column; gap: 10px; background: #333; padding: 10px; border-radius: 8px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="auto-limit-check" checked style="width: 20px; height: 20px; accent-color: #2979ff;"> 
+                    <span style="font-size: 1rem; color: #fff;">啟用自動偵測</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; border-top: 1px solid #555; padding-top: 10px;">
+                    <input type="checkbox" id="auto-log-check" style="width: 20px; height: 20px; accent-color: #ff3b30;"> 
+                    <span style="font-size: 1rem; color: #ff9800;">🟥 自動紀錄缺漏</span>
+                </div>
             </div>
         </div>
         <div class="input-group">
@@ -307,7 +319,7 @@
             <div class="info-area">
                 <div class="limit-container">
                     <div id="visual-limit" class="limit-sign unknown">?</div>
-                    <button id="report-btn" onclick="reportMissingLimit()">✍️ 回報</button>
+                    <button id="report-btn" onclick="quickMarkMissing()">📍 標記缺漏</button>
                 </div>
                 <div class="threshold-info">
                     <div class="threshold-badge">扣牌: <span id="alarm-threshold-text">88</span></div>
@@ -350,6 +362,7 @@
         const clockEl = document.getElementById('clock');
         const statusDiv = document.getElementById('status');
         const autoLimitCheck = document.getElementById('auto-limit-check');
+        const autoLogCheck = document.getElementById('auto-log-check'); // 新增
         const drawer = document.getElementById('settings-drawer');
         const overlay = document.getElementById('overlay');
         const body = document.body;
@@ -370,7 +383,6 @@
         let lastOsmCheckTime = 0;
         let lastAddressCheckTime = 0; 
         
-        // 全域變數：追蹤是否為第一次定位
         let isFirstFix = true;
 
         // Trip vars
@@ -420,37 +432,48 @@
             else overlay.style.display = 'none';
         };
 
-        // --- 缺漏回報系統 ---
+        // --- 缺漏回報系統 (一鍵標記 + 自動紀錄) ---
         let currentMissingLat = null;
         let currentMissingLon = null;
 
-        window.reportMissingLimit = function() {
+        // 手動快速標記
+        window.quickMarkMissing = function() {
             if (!currentMissingLat || !currentMissingLon) {
-                alert("尚未定位，無法回報");
+                alert("尚未定位，無法標記");
                 return;
             }
-            const input = prompt("請輸入此路段的正確速限 (例如 50)：", "50");
-            if (input) {
-                const limit = parseInt(input);
-                if (!isNaN(limit)) {
-                    saveCustomLimit(currentMissingLat, currentMissingLon, limit);
-                    setLimit(limit);
-                    updateVisualSign(limit, false, true); 
-                    alert("✅ 已記錄！下次經過這裡會自動套用此速限。");
-                }
-            }
+            saveCustomLimit(currentMissingLat, currentMissingLon, null);
+            
+            reportBtn.textContent = "✅ 已標記";
+            reportBtn.style.background = "#4caf50";
+            setTimeout(() => {
+                reportBtn.textContent = "📍 標記缺漏";
+                reportBtn.style.background = "#ff9800";
+                reportBtn.style.display = 'none'; 
+            }, 2000);
+            
+            statusDiv.textContent = "已標記此處，請稍後補填速限";
         };
 
         function saveCustomLimit(lat, lon, limit) {
             let reports = JSON.parse(localStorage.getItem('osm_reports') || "[]");
+            // 檢查重複 (極近距離不重複存)
+            const exists = reports.find(r => Math.abs(r.lat - lat) < 0.0001 && Math.abs(r.lon - lon) < 0.0001);
+            if (exists) {
+                if(limit !== null) exists.limit = limit; 
+                return;
+            }
+
             const newReport = {
                 lat: lat,
                 lon: lon,
-                limit: limit,
+                limit: limit, 
                 date: new Date().toLocaleString('zh-TW'),
                 address: locationDisplay.textContent.replace('📍 ', '')
             };
             reports.push(newReport);
+            // 限制數量避免 LocalStorage 爆炸 (最多100筆)
+            if (reports.length > 100) reports.shift();
             localStorage.setItem('osm_reports', JSON.stringify(reports));
         }
 
@@ -458,33 +481,57 @@
             const reports = JSON.parse(localStorage.getItem('osm_reports') || "[]");
             for (let r of reports) {
                 if (Math.abs(r.lat - lat) < 0.0005 && Math.abs(r.lon - lon) < 0.0005) {
-                    return r.limit;
+                    return r.limit; 
                 }
             }
-            return null;
+            return undefined; 
         }
+
+        window.updateReportSpeed = function(index, speed) {
+            let reports = JSON.parse(localStorage.getItem('osm_reports') || "[]");
+            reports[index].limit = speed;
+            localStorage.setItem('osm_reports', JSON.stringify(reports));
+            showOsmReports(); 
+        };
 
         window.showOsmReports = function() {
             toggleMenu();
             const reports = JSON.parse(localStorage.getItem('osm_reports') || "[]");
-            modalTitle.textContent = "OSM 缺漏回報列表";
+            modalTitle.textContent = "缺漏標記列表";
             historyListEl.innerHTML = "";
             
             if (reports.length === 0) {
-                historyListEl.innerHTML = `<div class="empty-msg">尚無回報紀錄</div>`;
+                historyListEl.innerHTML = `<div class="empty-msg">尚無標記紀錄</div>`;
             } else {
                 reports.forEach((r, idx) => {
                     const editLink = `https://www.openstreetmap.org/edit?editor=id#map=19/${r.lat}/${r.lon}`;
+                    const isPending = (r.limit === null);
+                    
+                    let speedControls = '';
+                    if (isPending) {
+                        speedControls = `
+                            <div style="margin-top:5px;">
+                                <span style="color:#ff9800; font-size:0.9rem;">快速設定: </span>
+                                <button class="btn-set-speed" onclick="updateReportSpeed(${idx}, 30)">30</button>
+                                <button class="btn-set-speed" onclick="updateReportSpeed(${idx}, 40)">40</button>
+                                <button class="btn-set-speed" onclick="updateReportSpeed(${idx}, 50)">50</button>
+                                <button class="btn-set-speed" onclick="updateReportSpeed(${idx}, 60)">60</button>
+                            </div>
+                        `;
+                    } else {
+                        speedControls = `<span style="color:#0f0">已設定: ${r.limit} km/h</span>`;
+                    }
+
                     const item = document.createElement('div');
                     item.className = 'history-item';
                     item.innerHTML = `
                         <div class="h-date">${r.date}</div>
                         <div style="font-size:1.1rem; font-weight:bold;">${r.address || "未知路段"}</div>
                         <div class="h-stats">
-                            <span>建議速限: <span style="color:#0f0">${r.limit}</span></span>
+                            ${speedControls}
                         </div>
-                        <div style="margin-top:5px;">
-                            <a href="${editLink}" target="_blank" class="btn-link">🌍 前往 OSM 修正地圖</a>
+                        <div style="margin-top:8px; border-top:1px solid #444; padding-top:5px;">
+                            <a href="${editLink}" target="_blank" class="btn-link">🌍 OSM</a>
                             <button class="btn-link" style="background:#d32f2f; margin-left:10px;" onclick="deleteReport(${idx})">刪除</button>
                         </div>
                     `;
@@ -667,21 +714,21 @@
             const now = Date.now();
             
             // OSM & 地址更新
-            // 修改條件：如果是「第一次定位 (isFirstFix)」，強制執行一次 OSM 查詢
             if (autoLimitCheck.checked && ( (now - lastOsmCheckTime > 15000 && speedKmh > 10) || isFirstFix ) ) {
-                
-                // 1. 先查本地是否有紀錄
                 const savedLimit = findCustomLimit(lat, lon);
-                if (savedLimit) {
-                    limitInput.value = savedLimit;
-                    updateVisualSign(savedLimit, false, true); 
-                    updateThresholdDisplay();
+                if (savedLimit !== undefined) {
+                    if (savedLimit !== null) {
+                        limitInput.value = savedLimit;
+                        updateVisualSign(savedLimit, false, true); 
+                        updateThresholdDisplay();
+                    } else {
+                         updateVisualSign(null, true);
+                    }
                 } else {
-                    // 2. 沒有本地紀錄才查 OSM
                     fetchSpeedLimit(lat, lon);
                 }
                 lastOsmCheckTime = now;
-                isFirstFix = false; // 標記已執行過第一次
+                isFirstFix = false; 
             }
 
             if (now - lastAddressCheckTime > 15000) { fetchAddress(lat, lon); lastAddressCheckTime = now; }
@@ -730,26 +777,25 @@
                         updateThresholdDisplay();
                         updatePiP(0, limitNumber);
                     } else {
-                        // OSM 有路但沒限速 -> 預設 50
-                        setDefaultLimit();
+                        setDefaultLimit(lat, lon); // Pass coords
                     }
                 } else {
-                    // OSM 沒資料 -> 預設 50
-                    setDefaultLimit();
+                    setDefaultLimit(lat, lon); // Pass coords
                 }
-            } catch (err) { 
-                // 連線錯誤 -> 預設 50
-                setDefaultLimit(); 
-            }
+            } catch (err) { setDefaultLimit(lat, lon); }
         }
 
-        // 新增函式：設定預設值
-        function setDefaultLimit() {
+        function setDefaultLimit(lat, lon) {
             const defaultVal = 50;
             limitInput.value = defaultVal;
-            updateVisualSign(defaultVal, true, false, true); // 最後參數 true 代表是「預設值」
+            updateVisualSign(defaultVal, true, false, true); 
             updateThresholdDisplay();
             updatePiP(0, defaultVal);
+
+            // [New] 自動紀錄邏輯
+            if (autoLogCheck.checked && lat && lon) {
+                 saveCustomLimit(lat, lon, null); // 存入 null 待填
+            }
         }
 
         function updateVisualSign(val, isAuto, isCustom = false, isDefault = false) {
@@ -758,12 +804,11 @@
                 visualLimit.classList.remove('unknown');
                 
                 if (isDefault) {
-                    // 如果是預設值，顯示橘色文字並保留回報按鈕
                     limitSourceText.innerHTML = "⚠️ 預設 (無資)";
                     limitSourceText.style.color = "#ff9800";
-                    reportBtn.style.display = 'block'; // 允許修正預設值
+                    reportBtn.style.display = 'block'; 
                 } else {
-                    reportBtn.style.display = 'none'; // 已有確切速限，隱藏按鈕
+                    reportBtn.style.display = 'none'; 
                     if (isCustom) {
                         limitSourceText.innerHTML = "📝 本地記憶";
                         limitSourceText.style.color = "#ff9800";
@@ -773,7 +818,6 @@
                     }
                 }
             } else {
-                // 理論上不會跑到這裡，因為我們預設了 50，除非 50 也失效
                 visualLimit.textContent = "?";
                 visualLimit.classList.add('unknown');
                 limitSourceText.innerHTML = "⚠️ 無速限資料";
