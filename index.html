@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>防扣牌預警系統</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
     <style>
         /* --- 全域設定 --- */
         body {
@@ -28,7 +31,7 @@
         body.warning #location-display { background: rgba(0,0,0,0.8); color: #fff; } 
         @keyframes flash-yellow { from { background-color: #fbc02d; } to { background-color: #ffeb3b; } }
 
-        /* --- 頂部元素 (漢堡、時鐘、位置) --- */
+        /* --- 頂部元素 --- */
         #menu-btn {
             position: absolute; top: 20px; left: 20px;
             font-size: 2rem; background: none; border: none; color: #0f0; 
@@ -88,6 +91,68 @@
         }
         .drawer-title { font-size: 1.3rem; font-weight: bold; color: #eee; }
         .close-btn { background: none; border: none; color: #aaa; font-size: 1.8rem; cursor: pointer; padding: 0 5px; }
+
+        /* --- 歷史紀錄 Modal --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 300;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+        .modal-overlay.show { display: flex; }
+        
+        .modal-container {
+            width: 90%; max-width: 500px; height: 85%;
+            background: #1c1c1e; border-radius: 20px;
+            display: flex; flex-direction: column; overflow: hidden;
+            border: 1px solid #333;
+        }
+        
+        /* 歷史清單樣式 */
+        .history-header {
+            padding: 20px; background: #2c2c2e; font-weight: bold; font-size: 1.2rem;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #444;
+        }
+        .history-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .history-item {
+            background: #2c2c2e; margin-bottom: 10px; padding: 15px;
+            border-radius: 12px; display: flex; flex-direction: column; gap: 8px;
+        }
+        .h-date { color: #888; font-size: 0.8rem; }
+        .h-stats { display: flex; justify-content: space-between; font-size: 1rem; font-weight: bold; margin-top: 5px; }
+        .h-stat-box { text-align: center; }
+        .h-label { font-size: 0.7rem; color: #aaa; display: block; }
+        .h-val { color: #fff; }
+        .h-val.max { color: #ff3b30; }
+        .empty-msg { text-align: center; color: #666; margin-top: 50px; }
+        .map-btn {
+            background: #007aff; color: white; border: none; padding: 8px;
+            border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-top: 5px;
+        }
+        .clear-btn { color: #ff3b30; background: none; border: none; font-size: 0.9rem; cursor: pointer; }
+
+        /* 地圖 Modal 專用 */
+        #map-container { flex: 1; width: 100%; position: relative; }
+        #trip-map { width: 100%; height: 100%; background: #000; }
+        .back-btn { 
+            position: absolute; 
+            top: 20px;        /* 距離頂部 */
+            right: 20px;      /* 改到右上角 (原本是 left: 10px) */
+            left: auto;       /* 清除左邊設定 */
+            z-index: 2000;    /* 加大層級，確保浮在地圖控制項之上 */
+            
+            background: #007aff; /* 改成亮藍色，比較像按鈕 */
+            color: #fff; 
+            border: none;
+            padding: 10px 24px; 
+            border-radius: 30px; 
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6); /* 增加陰影讓它浮起來 */
+            transition: transform 0.1s;
+        }
 
         /* --- 主畫面佈局 --- */
         .main-container {
@@ -197,6 +262,7 @@
         #test-file-btn { background-color: #ff9800; }
         #test-tts-btn { background-color: #28a745; }
         #pip-btn { background-color: #9c27b0; }
+        #history-btn { background-color: #007aff; }
         #status { margin-top: auto; padding-bottom: 10px; font-size: 0.8rem; color: #666; text-align: center; }
         #pip-canvas { display: none; }
         #pip-video { position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; }
@@ -255,6 +321,8 @@
             .adjust-row { height: 40px; }
         }
     </style>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 
@@ -271,6 +339,10 @@
         <div class="drawer-header">
             <span class="drawer-title">進階設定</span>
             <button class="close-btn" onclick="toggleMenu()">×</button>
+        </div>
+        <div class="input-group">
+            <label>行車紀錄</label>
+            <button class="drawer-btn" id="history-btn" onclick="showHistory()">📊 查看歷史紀錄</button>
         </div>
         <div class="input-group">
             <label>顯示模式</label>
@@ -297,6 +369,27 @@
             <button class="drawer-btn" id="test-file-btn">🔊 測試音效</button>
         </div>
         <div id="status">準備就緒</div>
+    </div>
+
+    <div id="history-modal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="history-header">
+                <span>行車紀錄</span>
+                <button class="clear-btn" onclick="clearHistory()">🗑️ 清除全部</button>
+                <button class="close-btn" onclick="closeHistory()" style="color:#fff;font-size:1.5rem;">×</button>
+            </div>
+            <div class="history-list" id="history-list">
+                </div>
+        </div>
+    </div>
+
+    <div id="map-modal" class="modal-overlay">
+        <div class="modal-container" style="height: 90%; max-width: 800px;">
+            <div id="map-container">
+                <button class="back-btn" onclick="closeMap()">⬅️ 返回列表</button>
+                <div id="trip-map"></div>
+            </div>
+        </div>
     </div>
 
     <div class="main-container">
@@ -361,6 +454,10 @@
         const overlay = document.getElementById('overlay');
         const body = document.body;
 
+        const historyModal = document.getElementById('history-modal');
+        const historyListEl = document.getElementById('history-list');
+        const mapModal = document.getElementById('map-modal');
+
         // PiP Elements
         const pipCanvas = document.getElementById('pip-canvas');
         const pipCtx = pipCanvas.getContext('2d');
@@ -371,13 +468,22 @@
         let lastSpeakTime = 0;
         let lastBeepTime = 0; 
         
-        // isMonitoring 現在代表「是否開啟警報模式」
-        // 就算為 false，GPS 也會在背景執行
         let isMonitoring = false; 
         
         let lastOsmCheckTime = 0;
         let lastAddressCheckTime = 0; 
         
+        // --- 行車紀錄變數 ---
+        let tripStartTime = null;
+        let tripMaxSpeed = 0;
+        let tripDistance = 0; // km
+        let currentTripPath = []; // 儲存 [lat, lon] 陣列
+        let lastLat = null;
+        let lastLon = null;
+
+        let mapInstance = null;
+        let polylineLayer = null;
+
         const TOLERANCE = 38; 
         const PRE_WARNING_BUFFER = 5; 
         
@@ -448,7 +554,6 @@
             const preWarningStart = alarmTrigger - PRE_WARNING_BUFFER;
             let bgColor = '#000000';
             
-            // 只有在開啟監控 (isMonitoring) 時才顯示警告顏色
             if (isMonitoring) {
                 if (currentSpeed > alarmTrigger) bgColor = '#b71c1c'; 
                 else if (currentSpeed > preWarningStart) bgColor = '#fbc02d'; 
@@ -518,6 +623,118 @@
             }
         };
 
+        // --- 歷史紀錄與地圖邏輯 ---
+        window.showHistory = function() {
+            toggleMenu(); 
+            renderHistory();
+            historyModal.classList.add('show');
+        };
+        window.closeHistory = function() {
+            historyModal.classList.remove('show');
+        };
+        window.clearHistory = function() {
+            if(confirm('確定要刪除所有紀錄嗎？')) {
+                localStorage.removeItem('trip_records');
+                renderHistory();
+            }
+        };
+
+        // 顯示地圖
+        window.showMap = function(index) {
+            const records = JSON.parse(localStorage.getItem('trip_records') || "[]");
+            const record = records[index];
+            if(!record || !record.path || record.path.length === 0) {
+                alert("此行程沒有軌跡資料");
+                return;
+            }
+
+            mapModal.classList.add('show');
+            
+            // 初始化地圖 (如果還沒初始化)
+            if (!mapInstance) {
+                mapInstance = L.map('trip-map');
+                // 使用深色底圖 (CartoDB Dark Matter)
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; OpenStreetMap &copy; CARTO',
+                    subdomains: 'abcd',
+                    maxZoom: 19
+                }).addTo(mapInstance);
+            }
+            
+            // 清除舊的路徑
+            if (polylineLayer) {
+                mapInstance.removeLayer(polylineLayer);
+            }
+
+            // 修正地圖大小 (因為它是從 hidden 變成 visible)
+            setTimeout(() => {
+                mapInstance.invalidateSize();
+                
+                // 畫出軌跡
+                polylineLayer = L.polyline(record.path, {
+                    color: '#0f0', // 螢光綠軌跡
+                    weight: 4,
+                    opacity: 0.8
+                }).addTo(mapInstance);
+
+                // 縮放地圖到軌跡範圍
+                mapInstance.fitBounds(polylineLayer.getBounds(), { padding: [50, 50] });
+            }, 100);
+        };
+
+        window.closeMap = function() {
+            mapModal.classList.remove('show');
+        };
+
+        function saveTrip() {
+            if (!tripStartTime) return;
+            const now = new Date();
+            const durationMs = now - tripStartTime;
+            if (durationMs < 10000 && tripDistance < 0.1) return; 
+
+            const hours = durationMs / 1000 / 3600;
+            const avgSpeed = hours > 0 ? (tripDistance / hours) : 0;
+
+            const record = {
+                date: tripStartTime.toLocaleString('zh-TW'),
+                duration: (durationMs / 1000 / 60).toFixed(1) + " 分",
+                distance: tripDistance.toFixed(1) + " km",
+                maxSpeed: Math.round(tripMaxSpeed) + " km/h",
+                avgSpeed: Math.round(avgSpeed) + " km/h",
+                path: currentTripPath // 儲存軌跡
+            };
+
+            let records = JSON.parse(localStorage.getItem('trip_records') || "[]");
+            records.unshift(record); 
+            if (records.length > 20) records.pop(); // 限制20筆以避免 LocalStorage 爆掉
+            localStorage.setItem('trip_records', JSON.stringify(records));
+            
+            alert(`🏁 行程結束，已儲存！\n\n📏 里程: ${record.distance}\n🚀 極速: ${record.maxSpeed}\n⏱️ 時間: ${record.duration}`);
+        }
+
+        function renderHistory() {
+            const records = JSON.parse(localStorage.getItem('trip_records') || "[]");
+            historyListEl.innerHTML = "";
+            if (records.length === 0) {
+                historyListEl.innerHTML = `<div class="empty-msg">尚無紀錄<br>按「啟動偵測」開始記錄</div>`;
+                return;
+            }
+            records.forEach((r, index) => {
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.innerHTML = `
+                    <div class="h-date">${r.date} - ${r.duration}</div>
+                    <div class="h-stats">
+                        <div class="h-stat-box"><span class="h-label">極速</span><span class="h-val max">${r.maxSpeed}</span></div>
+                        <div class="h-stat-box"><span class="h-label">平均</span><span class="h-val">${r.avgSpeed}</span></div>
+                        <div class="h-stat-box"><span class="h-label">里程</span><span class="h-val">${r.distance}</span></div>
+                    </div>
+                    <button class="map-btn" onclick="showMap(${index})">🗺️ 查看地圖軌跡</button>
+                `;
+                historyListEl.appendChild(item);
+            });
+        }
+
         window.setLimit = function(val) {
             limitInput.value = val;
             updateVisualSign(val, false);
@@ -569,9 +786,8 @@
             setTimeout(() => { speak(voiceTextInput.value || "測試語音"); }, 1000);
         });
 
-        // 按鈕邏輯變更：只切換「警報狀態」，不負責開關 GPS
         toggleBtn.addEventListener('click', () => {
-            silentAudio.play().catch(()=>{}); // 用戶手勢解鎖音效
+            silentAudio.play().catch(()=>{}); 
             if (!isMonitoring) {
                 startActiveMonitoring();
             } else {
@@ -597,7 +813,6 @@
             if (wakeLock !== null && document.visibilityState === 'visible') { await requestWakeLock(); }
         });
 
-        // 頁面載入後自動執行的 GPS 啟動函式
         function initGPS() {
             if (navigator.geolocation) {
                 statusDiv.textContent = "定位中 (監控待命)";
@@ -609,7 +824,6 @@
                 alert("此瀏覽器不支援 GPS");
             }
         }
-        // 馬上執行
         initGPS();
 
         async function startActiveMonitoring() {
@@ -618,7 +832,15 @@
             setTimeout(() => { speak("偵測開始"); }, 800);
             await requestWakeLock();
 
-            isMonitoring = true; // 開啟警報標記
+            // 重置行程數據
+            tripStartTime = new Date();
+            tripMaxSpeed = 0;
+            tripDistance = 0;
+            lastLat = null;
+            lastLon = null;
+            currentTripPath = []; // 清空軌跡
+
+            isMonitoring = true; 
             toggleBtn.textContent = "🛑 停止偵測";
             toggleBtn.classList.add('active');
             statusDiv.textContent = "⚠️ 監控中";
@@ -628,17 +850,31 @@
             if (wakeLock !== null) wakeLock.release();
             silentAudio.pause();
             
-            isMonitoring = false; // 關閉警報標記
+            // 儲存行程
+            saveTrip();
+
+            isMonitoring = false; 
             toggleBtn.textContent = "🚀 啟動偵測";
             toggleBtn.classList.remove('active');
             
-            // 移除畫面上的紅色/黃色警告，變回黑色
             body.classList.remove('danger');
             body.classList.remove('warning');
             
             statusDiv.textContent = "已暫停 (定位持續中)";
-            // 注意：我們沒有清除 watchId，所以位置和時速會繼續更新
         }
+
+        function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = deg2rad(lat2-lat1);  
+            const dLon = deg2rad(lon2-lon1); 
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+            const d = R * c; 
+            return d;
+        }
+        function deg2rad(deg) { return deg * (Math.PI/180); }
 
         function updatePosition(position) {
             const lat = position.coords.latitude;
@@ -647,17 +883,35 @@
             if (speedMps === null || speedMps < 0) speedMps = 0;
             const speedKmh = speedMps * 3.6;
 
+            // --- 行車紀錄邏輯 ---
+            if (isMonitoring) {
+                if (lastLat !== null && lastLon !== null) {
+                    const dist = getDistanceFromLatLonInKm(lastLat, lastLon, lat, lon);
+                    // 簡單過濾 GPS 漂移 & 距離篩選 (大於 10 公尺才記錄一點，避免檔案過大)
+                    if (speedKmh > 2 && dist > 0.0005 && dist < 0.2) { 
+                        tripDistance += dist;
+                    }
+                    // 記錄軌跡點 (距離 > 10m 才存)
+                    if (dist > 0.01) {
+                         currentTripPath.push([lat, lon]);
+                    }
+                } else {
+                    // 第一點
+                    currentTripPath.push([lat, lon]);
+                }
+
+                if (speedKmh > tripMaxSpeed) tripMaxSpeed = speedKmh;
+                lastLat = lat;
+                lastLon = lon;
+            }
+
             speedDisplay.innerHTML = `${Math.round(speedKmh)}`;
             
             const now = Date.now();
-            
-            // OSM 限速更新 (15秒一次)
             if (autoLimitCheck.checked && (now - lastOsmCheckTime > 15000) && speedKmh > 10) {
                 fetchSpeedLimit(lat, lon);
                 lastOsmCheckTime = now;
             }
-            
-            // 地址更新 (15秒一次)
             if (now - lastAddressCheckTime > 15000) {
                 fetchAddress(lat, lon);
                 lastAddressCheckTime = now;
@@ -668,13 +922,11 @@
         }
 
         function checkOverSpeed(currentSpeed) {
-            // 如果沒開啟監控，就不做任何警報，直接清除樣式並返回
             if (!isMonitoring) {
                 body.classList.remove('danger');
                 body.classList.remove('warning');
                 return;
             }
-
             const baseLimit = parseFloat(limitInput.value);
             const alarmTrigger = baseLimit + TOLERANCE; 
             const preWarningStart = alarmTrigger - PRE_WARNING_BUFFER; 
@@ -701,34 +953,21 @@
             }
         }
 
-        // 抓取地址功能 (Nominatim)
         async function fetchAddress(lat, lon) {
             const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=zh-TW`;
-            
             try {
                 const response = await fetch(url);
                 const data = await response.json();
-                
                 if (data && data.address) {
                     const road = data.address.road || data.address.pedestrian || data.address.cycleway || "";
                     const suburb = data.address.suburb || data.address.village || data.address.town || data.address.city_district || "";
                     const city = data.address.city || data.address.county || "";
-                    
-                    let displayText = "";
-                    if (road) {
-                        displayText = `${suburb} ${road}`;
-                    } else if (suburb) {
-                        displayText = `${city} ${suburb}`;
-                    } else {
-                        displayText = `${city}`;
-                    }
+                    let displayText = road ? `${suburb} ${road}` : (suburb ? `${city} ${suburb}` : `${city}`);
                     locationDisplay.textContent = displayText.trim();
                 } else {
                     locationDisplay.textContent = "無法辨識位置";
                 }
-            } catch (err) {
-                console.warn("Address fetch failed", err);
-            }
+            } catch (err) { console.warn("Address fetch failed", err); }
         }
 
         async function fetchSpeedLimit(lat, lon) {
