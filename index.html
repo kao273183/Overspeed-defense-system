@@ -87,6 +87,21 @@
         .drawer-title { font-size: 1.3rem; font-weight: bold; color: #eee; }
         .close-btn { background: none; border: none; color: #aaa; font-size: 1.8rem; cursor: pointer; padding: 0 5px; }
 
+        /* --- 廣告容器樣式 (目前隱藏) --- */
+        .ad-container {
+            width: 100%;
+            min-height: 100px;
+            background: #222;
+            border: 1px dashed #555;
+            /* 🔥 [重要] 預設隱藏，申請好廣告後請改成 display: flex; */
+            display: none; 
+            align-items: center; justify-content: center;
+            color: #777; font-size: 0.9rem;
+            margin-bottom: 15px; border-radius: 8px;
+            overflow: hidden;
+        }
+        .ad-label { display: block; }
+
         /* --- Modal 共用 --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -128,7 +143,7 @@
         }
         .btn-set-speed:hover { background: #666; }
         
-        /* 說明 Modal 專用樣式 */
+        /* 說明 Modal 樣式 */
         .help-content { padding: 20px; color: #ddd; line-height: 1.6; overflow-y: auto; }
         .help-content h3 { color: #007aff; margin-top: 0; }
         .help-content ul { padding-left: 20px; margin-bottom: 20px; }
@@ -179,7 +194,10 @@
             display: flex; justify-content: center; align-items: center;
             color: #000; font-weight: bold; font-size: 36px;
             box-shadow: 0 0 15px rgba(0,0,0,0.5); font-family: Arial, sans-serif; transition: all 0.3s;
+            cursor: pointer; /* 讓滑鼠變成手指 */
+            user-select: none;
         }
+        .limit-sign:active { transform: scale(0.9); }
         .limit-sign.unknown { border-color: #777; color: #777; font-size: 40px; } 
         
         /* 回報按鈕 */
@@ -277,6 +295,10 @@
             <button class="close-btn" onclick="toggleMenu()">×</button>
         </div>
         
+        <div class="ad-container">
+            <span class="ad-label">贊助商廣告 (申請後顯示)</span>
+        </div>
+
         <div class="input-group">
             <label>系統資訊</label>
             <button class="drawer-btn" id="help-btn" onclick="showHelp()">ℹ️ 使用說明 / 關於</button>
@@ -314,6 +336,9 @@
                 <span id="modal-title">行車紀錄</span>
                 <button class="close-btn" onclick="closeHistory()" style="color:#fff;font-size:1.5rem;">×</button>
             </div>
+            <div class="ad-container" style="margin: 10px; width: auto;">
+                <span class="ad-label">贊助商廣告 (申請後顯示)</span>
+            </div>
             <div class="history-list" id="history-list"></div>
         </div>
     </div>
@@ -337,10 +362,10 @@
                     <li><b>紅色警報：</b> 超過扣牌標準 (速限+38)，螢幕閃爍並語音大喊「嚴重超速」。</li>
                 </ul>
 
-                <h3>📍 缺漏回報功能</h3>
+                <h3>📍 缺漏回報 / 修改</h3>
                 <ul>
-                    <li><b>一鍵標記：</b> 當速限顯示「?」或「預設(無資)」時，點擊橘色 <b>「📍 標記缺漏」</b> 按鈕，系統會自動記下座標。</li>
-                    <li><b>事後補填：</b> 回家後打開選單中的 <b>「📝 查看缺漏回報」</b>，可補上正確速限或刪除。</li>
+                    <li><b>直接修改：</b> <span style="color:#ff9800">點擊主畫面的速限圓圈</span>，即可直接修正該路段速限。</li>
+                    <li><b>一鍵標記：</b> 當速限顯示「?」時，點擊橘色 <b>「📍 標記缺漏」</b> 按鈕，系統會自動記下座標。</li>
                     <li><b>自動紀錄：</b> 在設定中勾選「自動紀錄缺漏」，行駛中無需操作，系統會自動記錄未知路段。</li>
                 </ul>
 
@@ -349,10 +374,7 @@
                     <li>本網頁版具備「防休眠」功能，但請盡量保持螢幕開啟以獲得最佳 GPS 訊號。</li>
                     <li>速限資料來自 OpenStreetMap (OSM)，僅供參考，請以實際路況為準。</li>
                 </ul>
-                
-                <div class="help-footer">
-                    作者:MiniKao<br>Web Version 1.1<br>Designed for Safe Driving
-                </div>
+                <div class="help-footer">作者:MiniKao<br>Web Version 1.3<br>Designed for Safe Driving</div>
             </div>
         </div>
     </div>
@@ -371,7 +393,7 @@
             <div id="speed-display">0</div> 
             <div class="info-area">
                 <div class="limit-container">
-                    <div id="visual-limit" class="limit-sign unknown">?</div>
+                    <div id="visual-limit" class="limit-sign unknown" onclick="editCurrentLimit()">?</div>
                     <button id="report-btn" onclick="quickMarkMissing()">📍 標記缺漏</button>
                 </div>
                 <div class="threshold-info">
@@ -424,7 +446,7 @@
         const historyListEl = document.getElementById('history-list');
         const modalTitle = document.getElementById('modal-title');
         const mapModal = document.getElementById('map-modal');
-        const helpModal = document.getElementById('help-modal'); // 新增
+        const helpModal = document.getElementById('help-modal'); 
         
         const pipCanvas = document.getElementById('pip-canvas');
         const pipCtx = pipCanvas.getContext('2d');
@@ -454,7 +476,7 @@
         const PRE_WARNING_BUFFER = 5; 
         const synth = window.speechSynthesis;
 
-        // --- 初始化檢查 (首次使用自動跳出說明) ---
+        // --- 初始化檢查 ---
         window.addEventListener('load', () => {
             if (!localStorage.getItem('hasSeenHelp')) {
                 showHelp();
@@ -495,19 +517,36 @@
             else overlay.style.display = 'none';
         };
 
-        // --- 說明視窗邏輯 ---
         window.showHelp = function() {
-            // 如果從選單打開，先關選單
             if(drawer.classList.contains('open')) toggleMenu();
             helpModal.classList.add('show');
         }
-        window.closeHelp = function() {
-            helpModal.classList.remove('show');
-        }
+        window.closeHelp = function() { helpModal.classList.remove('show'); }
 
-        // --- 缺漏回報系統 ---
+        // --- 缺漏回報系統 (一鍵標記 + 點擊修改) ---
         let currentMissingLat = null;
         let currentMissingLon = null;
+
+        // [New] 點擊圓圈直接修改
+        window.editCurrentLimit = function() {
+            if (!currentMissingLat || !currentMissingLon) {
+                alert("尚未定位，無法修改");
+                return;
+            }
+            let defaultVal = limitInput.value || "50";
+            const input = prompt("修正此路段速限為：", defaultVal);
+            
+            if (input) {
+                const newLimit = parseInt(input);
+                if (!isNaN(newLimit)) {
+                    saveCustomLimit(currentMissingLat, currentMissingLon, newLimit);
+                    setLimit(newLimit);
+                    updateVisualSign(newLimit, false, true); 
+                    updateThresholdDisplay();
+                    alert(`✅ 已修正為 ${newLimit} km/h，下次經過會自動套用。`);
+                }
+            }
+        };
 
         window.quickMarkMissing = function() {
             if (!currentMissingLat || !currentMissingLon) {
@@ -529,20 +568,24 @@
 
         function saveCustomLimit(lat, lon, limit) {
             let reports = JSON.parse(localStorage.getItem('osm_reports') || "[]");
-            const exists = reports.find(r => Math.abs(r.lat - lat) < 0.0001 && Math.abs(r.lon - lon) < 0.0001);
-            if (exists) {
-                if(limit !== null) exists.limit = limit; 
-                return;
+            const index = reports.findIndex(r => Math.abs(r.lat - lat) < 0.0002 && Math.abs(r.lon - lon) < 0.0002);
+            
+            if (index !== -1) {
+                if (limit !== undefined) {
+                    reports[index].limit = limit;
+                    reports[index].date = new Date().toLocaleString('zh-TW');
+                }
+            } else {
+                const newReport = {
+                    lat: lat,
+                    lon: lon,
+                    limit: limit, 
+                    date: new Date().toLocaleString('zh-TW'),
+                    address: locationDisplay.textContent.replace('📍 ', '')
+                };
+                reports.push(newReport);
             }
-
-            const newReport = {
-                lat: lat,
-                lon: lon,
-                limit: limit, 
-                date: new Date().toLocaleString('zh-TW'),
-                address: locationDisplay.textContent.replace('📍 ', '')
-            };
-            reports.push(newReport);
+            
             if (reports.length > 100) reports.shift();
             localStorage.setItem('osm_reports', JSON.stringify(reports));
         }
@@ -731,7 +774,7 @@
         function initGPS() {
             if (navigator.geolocation) {
                 statusDiv.textContent = "定位中...";
-                locationDisplay.textContent = "定位中...";
+                locationDisplay.textContent = "📍 定位中...";
                 watchId = navigator.geolocation.watchPosition(updatePosition, handleError, { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 });
             } else { alert("此瀏覽器不支援 GPS"); }
         }
@@ -880,7 +923,8 @@
                 } else {
                     reportBtn.style.display = 'none'; 
                     if (isCustom) {
-                        limitSourceText.innerHTML = "📝 本地記憶";
+                        // [修改] 增加點擊修改的提示
+                        limitSourceText.innerHTML = "📝 本地記憶 <br>(點擊限速圖示修改)";
                         limitSourceText.style.color = "#ff9800";
                     } else {
                         limitSourceText.innerHTML = isAuto ? "OSM 自動" : "手動設定";
