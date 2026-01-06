@@ -47,17 +47,11 @@
             cursor: pointer; z-index: 100; padding: 5px; opacity: 0.9;
         }
 
-        #hud-btn {
-            position: absolute; top: 20px; 
-            left: max(60px, calc(env(safe-area-inset-left) + 40px));
-            font-size: 1rem; background: #333; border: 1px solid #555; color: #0f0; 
-            cursor: pointer; z-index: 100; padding: 4px 10px; border-radius: 6px; opacity: 0.9;
-            font-weight: bold;
-        }
-
+        /* [修改] 地圖按鈕往左移，填補原本 HUD 按鈕的位置 */
         #minimap-btn {
             position: absolute; top: 20px; 
-            left: max(125px, calc(env(safe-area-inset-left) + 105px));
+            /* 原本是 125px，現在移到 70px (原本 HUD 的位置) */
+            left: max(70px, calc(env(safe-area-inset-left) + 50px));
             font-size: 1rem; background: #333; border: 1px solid #555; color: #fff; 
             cursor: pointer; z-index: 100; padding: 4px 10px; border-radius: 6px; opacity: 0.9;
             font-weight: bold;
@@ -124,22 +118,21 @@
             color: #0f0; font-size: 28vh; margin: 0; padding: 0; transition: color 0.2s, transform 0.5s;
             font-family: 'Arial Black', sans-serif;
             z-index: 10; 
-            display: block; /* 預設顯示 */
+            display: block; 
         }
         #speed-display::after {
             content: 'km/h'; display: block; font-size: 1.5rem; 
             color: #0f0; text-align: center; font-weight: normal; margin-top: -10px; text-shadow: none; opacity: 0.8;
         }
 
-        /* [新增] 指針時速表 */
+        /* 指針時速表 */
         #analog-gauge {
-            display: none; /* 預設隱藏 */
-            width: 35vh; height: 35vh; /* 跟數位字體差不多大 */
+            display: none; 
+            width: 35vh; height: 35vh; 
             max-width: 300px; max-height: 300px;
             z-index: 10;
         }
 
-        /* [主題] 當 Body 有 analog-theme class 時 */
         body.theme-analog #speed-display { display: none; }
         body.theme-analog #analog-gauge { display: block; }
 
@@ -229,6 +222,9 @@
         #osm-report-btn { background-color: #e91e63; }
         #upload-history-btn { background-color: #009688; }
         #test-tts-btn { background-color: #28a745; }
+        /* [新增] HUD 按鈕樣式 (黃色) */
+        #drawer-hud-btn { background-color: #ffc107; color: #000; }
+
         .ad-container { width: 100%; min-height: 100px; background: #222; border: 1px dashed #555; display: none; align-items: center; justify-content: center; color: #777; font-size: 0.9rem; margin-bottom: 15px; border-radius: 8px; overflow: hidden; }
         .ad-label { display: block; }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 300; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
@@ -276,7 +272,7 @@
            ========================================= */
         @media (orientation: landscape) {
             .main-container { 
-                padding: 5px 60px; /* [瘦身] 減少上下 padding */
+                padding: 5px 60px;
                 padding-top: 50px; 
                 justify-content: flex-end; 
             }
@@ -286,16 +282,16 @@
                 align-items: center; 
                 justify-content: center; 
                 gap: 30px; 
-                margin-bottom: 10px; /* [瘦身] 減少底部邊距 */
+                margin-bottom: 10px; 
                 width: 100%;
             }
 
             .dashboard.map-active {
-                gap: 35vw; /* [瘦身] 縮小地圖推開距離 */
+                gap: 35vw; 
             }
             
             #speed-display { 
-                font-size: 28vh; /* [瘦身] 縮小字體 */
+                font-size: 28vh; 
                 text-align: center; line-height: 0.9; 
                 z-index: 10;
             }
@@ -305,9 +301,8 @@
                 width: 45vh; height: 45vh;
             }
             
-            .info-area { margin-top: 0; flex-direction: row; z-index: 10; gap: 10px; /* [瘦身] 縮小 gap */ }
+            .info-area { margin-top: 0; flex-direction: row; z-index: 10; gap: 10px; }
             
-            /* [瘦身] 縮小限速牌 */
             .limit-sign { 
                 width: 100px; height: 100px; font-size: 45px; border-width: 8px; 
             }
@@ -317,7 +312,7 @@
                 position: absolute;
                 top: 50%; left: 50%;
                 transform: translate(-50%, -50%);
-                width: 35vw; /* [瘦身] 縮小地圖寬度 */
+                width: 35vw; 
                 height: 55vh; 
                 max-width: none; max-height: none;
                 border-radius: 20px;
@@ -330,25 +325,23 @@
                 margin: 0;
             }
 
-            /* [瘦身] 底部控制區優化 */
             .primary-controls { 
                 max-width: 850px; width: 98%; 
                 flex-direction: row; align-items: stretch; 
-                padding: 8px 20px; /* 減少內距 */
+                padding: 8px 20px; 
                 background: #1c1c1e; gap: 10px; z-index: 20; 
-                height: 55px; /* 強制縮小高度 */
-                overflow: hidden; /* 防止溢出 */
+                height: 55px; 
+                overflow: hidden; 
             }
             
             .control-group-left { 
                 flex: 2; justify-content: center; gap: 5px; 
-                flex-direction: row; /* 改成橫向排列 */
+                flex-direction: row; 
                 align-items: center;
             }
             
-            .quick-presets { display: none; /* [瘦身] 橫向時隱藏快速按鈕，節省空間 */ }
+            .quick-presets { display: none; }
             
-            /* 調整按鈕大小 */
             #toggle-btn { 
                 flex: 1; font-size: 1.1rem; height: 100%; padding: 0; 
                 white-space: nowrap;
@@ -367,7 +360,6 @@
 <body>
 
     <button id="menu-btn" onclick="toggleMenu()">☰</button>
-    <button id="hud-btn" onclick="toggleHud()">HUD</button>
     <button id="minimap-btn" onclick="toggleMiniMap()">🗺️ 地圖</button>
 
     <div id="location-display">📍 定位中...</div> 
@@ -398,8 +390,9 @@
         </div>
 
         <div class="input-group">
-            <label>儀表板風格</label>
-            <div style="display:flex; gap:10px;">
+            <label>顯示設定</label>
+            <button class="drawer-btn" id="drawer-hud-btn" onclick="toggleHud()">🪞 切換 HUD 鏡像模式</button>
+            <div style="display:flex; gap:10px; margin-top:5px;">
                 <button class="drawer-btn" style="background:#444;" onclick="setTheme('digital')">🔢 數位</button>
                 <button class="drawer-btn" style="background:#444;" onclick="setTheme('analog')">⌚ 指針</button>
             </div>
@@ -448,6 +441,7 @@
     <div id="help-modal" class="modal-overlay">
         <div class="modal-container">
             <div class="history-header"><span>關於本系統</span><button class="close-btn" onclick="closeHelp()" style="color:#fff;font-size:1.5rem;">×</button></div>
+            
             <div class="help-content">
                 <h3>🚀 如何開始？</h3>
                 <ul>
@@ -475,7 +469,7 @@
 
                 <h3>🗺️ 顯示模式</h3>
                 <ul>
-                    <li><b>HUD 模式：</b> 點擊左上角 <b>HUD</b>，畫面上下顛倒，適合夜間投影擋風玻璃。</li>
+                    <li><b>HUD 模式：</b> 點擊選單中的 <b>🪞 切換 HUD</b>，畫面上下顛倒。</li>
                     <li><b>小地圖：</b> 點擊 <b>🗺️ 地圖</b> 開啟。直向時懸浮右下角；橫向時變身為儀表板背景。</li>
                 </ul>
                 
@@ -491,7 +485,7 @@
                     <li>速限資料來自 OpenStreetMap (OSM)，僅供參考，請以實際路況為準。</li>
                 </ul>
 
-                <div class="help-footer">作者:MiniKao<br>Web Version 2.14<br>Designed for Safe Driving</div>
+                <div class="help-footer">作者:MiniKao<br>Web Version 2.15<br>Designed for Safe Driving</div>
             </div>
         </div>
     </div>
@@ -541,7 +535,7 @@
 
     <script>
         const speedDisplay = document.getElementById('speed-display');
-        const analogGauge = document.getElementById('analog-gauge'); // [新增]
+        const analogGauge = document.getElementById('analog-gauge');
         const locationDisplay = document.getElementById('location-display');
         const limitInput = document.getElementById('limit-input');
         const visualLimit = document.getElementById('visual-limit');
@@ -603,7 +597,7 @@
         let miniMapPolyline = null;
         let miniMapPath = [];
 
-        let currentTheme = localStorage.getItem('speed_theme') || 'digital'; // [新增]
+        let currentTheme = localStorage.getItem('speed_theme') || 'digital'; 
 
         const TOLERANCE = 38; 
         const PRE_WARNING_BUFFER = 5; 
@@ -611,12 +605,10 @@
 
         window.addEventListener('load', () => {
             if (!localStorage.getItem('hasSeenHelp')) { showHelp(); localStorage.setItem('hasSeenHelp', 'true'); }
-            // PWA disabled for dev
             // if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
             
-            // 初始化主題
             setTheme(currentTheme);
-            drawGauge(0); // 畫初始 0
+            drawGauge(0);
         });
 
         function updateClock() {
@@ -642,8 +634,7 @@
 
         window.toggleHud = function() {
             body.classList.toggle('hud-mode');
-            if(body.classList.contains('hud-mode')) { hudBtn.style.color = "#ffeb3b"; hudBtn.style.borderColor = "#ffeb3b"; } 
-            else { hudBtn.style.color = "#0f0"; hudBtn.style.borderColor = "#555"; }
+            if(drawer.classList.contains('open')) toggleMenu(); // 關閉選單
         };
 
         window.toggleMiniMap = function() {
@@ -666,7 +657,6 @@
             }
         };
 
-        // --- 主題切換邏輯 ---
         window.setTheme = function(theme) {
             currentTheme = theme;
             localStorage.setItem('speed_theme', theme);
@@ -676,10 +666,9 @@
             } else {
                 body.classList.remove('theme-analog');
             }
-            if(drawer.classList.contains('open')) toggleMenu(); // 關閉選單
+            if(drawer.classList.contains('open')) toggleMenu(); 
         };
 
-        // --- 指針儀表板繪製 ---
         function drawGauge(speed) {
             const canvas = analogGauge;
             const ctx = canvas.getContext('2d');
@@ -689,22 +678,18 @@
             const cy = h / 2;
             const r = w / 2 - 20;
 
-            // 清空
             ctx.clearRect(0, 0, w, h);
 
-            // 判斷顏色狀態
-            let mainColor = '#0f0'; // 綠色
-            if (body.classList.contains('danger')) mainColor = '#fff'; // 危險變白(因為背景紅)
-            else if (body.classList.contains('warning')) mainColor = '#000'; // 警告變黑(因為背景黃)
+            let mainColor = '#0f0'; 
+            if (body.classList.contains('danger')) mainColor = '#fff'; 
+            else if (body.classList.contains('warning')) mainColor = '#000'; 
 
-            // 繪製外圈
             ctx.beginPath();
             ctx.arc(cx, cy, r, 0.75 * Math.PI, 2.25 * Math.PI);
             ctx.lineWidth = 15;
             ctx.strokeStyle = '#333';
             ctx.stroke();
 
-            // 繪製刻度
             ctx.fillStyle = '#aaa';
             ctx.font = 'bold 20px Arial';
             ctx.textAlign = 'center';
@@ -714,87 +699,61 @@
                 const angle = 0.75 * Math.PI + (i / 240) * (1.5 * Math.PI);
                 const tx = cx + (r - 35) * Math.cos(angle);
                 const ty = cy + (r - 35) * Math.sin(angle);
-                
-                // 大刻度線
                 const x1 = cx + (r - 10) * Math.cos(angle);
                 const y1 = cy + (r - 10) * Math.sin(angle);
                 const x2 = cx + r * Math.cos(angle);
                 const y2 = cy + r * Math.sin(angle);
-                
                 ctx.beginPath();
                 ctx.moveTo(x1, y1);
                 ctx.lineTo(x2, y2);
                 ctx.lineWidth = 3;
                 ctx.strokeStyle = '#fff';
                 ctx.stroke();
-
                 ctx.fillText(i, tx, ty);
             }
 
-            // 繪製指針
-            // 限制指針不超過 240
             const displaySpeed = Math.min(speed, 240);
             const needleAngle = 0.75 * Math.PI + (displaySpeed / 240) * (1.5 * Math.PI);
-            
             ctx.beginPath();
             ctx.moveTo(cx, cy);
             ctx.lineTo(cx + (r - 20) * Math.cos(needleAngle), cy + (r - 20) * Math.sin(needleAngle));
             ctx.lineWidth = 8;
-            ctx.strokeStyle = mainColor; // 跟隨狀態變色
+            ctx.strokeStyle = mainColor; 
             ctx.lineCap = 'round';
-            
-            // 陰影
             ctx.shadowBlur = 10;
             ctx.shadowColor = mainColor;
             ctx.stroke();
-            ctx.shadowBlur = 0; // 重置
+            ctx.shadowBlur = 0; 
 
-            // 中心圓點
             ctx.beginPath();
             ctx.arc(cx, cy, 10, 0, 2 * Math.PI);
             ctx.fillStyle = '#555';
             ctx.fill();
 
-            // 數字顯示 (小)
             ctx.fillStyle = mainColor;
             ctx.font = 'bold 40px Arial';
             ctx.fillText(Math.round(speed), cx, cy + 50);
-            
             ctx.font = '16px Arial';
             ctx.fillStyle = '#888';
             ctx.fillText('km/h', cx, cy + 80);
         }
 
         function initMiniMap() {
-            miniMap = L.map('realtime-map', { 
-                zoomControl: false, 
-                attributionControl: false 
-            }).setView([25.0330, 121.5654], 18); 
-            
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                maxZoom: 19
-            }).addTo(miniMap);
-            
-            if (currentMissingLat && currentMissingLon) {
-                updateMiniMap(currentMissingLat, currentMissingLon);
-            }
+            miniMap = L.map('realtime-map', { zoomControl: false, attributionControl: false }).setView([25.0330, 121.5654], 18); 
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(miniMap);
+            if (currentMissingLat && currentMissingLon) { updateMiniMap(currentMissingLat, currentMissingLon); }
         }
 
         function updateMiniMap(lat, lon) {
             if (!miniMap) return;
             const latlng = [lat, lon];
-            if (!miniMapMarker) {
-                miniMapMarker = L.circleMarker(latlng, { radius: 8, fillColor: '#2979ff', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(miniMap);
-            } else { miniMapMarker.setLatLng(latlng); }
-            
+            if (!miniMapMarker) { miniMapMarker = L.circleMarker(latlng, { radius: 8, fillColor: '#2979ff', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(miniMap); } 
+            else { miniMapMarker.setLatLng(latlng); }
             miniMapPath.push(latlng);
             if (miniMapPath.length > 500) miniMapPath.shift(); 
-
             if (!miniMapPolyline) { miniMapPolyline = L.polyline(miniMapPath, { color: '#00e676', weight: 3 }).addTo(miniMap); } 
             else { miniMapPolyline.setLatLngs(miniMapPath); }
-            
-            miniMap.setView(latlng, 18); 
-            miniMap.invalidateSize(); 
+            miniMap.setView(latlng, 18); miniMap.invalidateSize(); 
         }
 
         window.toggleMenu = function() {
@@ -1046,7 +1005,7 @@
             }
 
             speedDisplay.innerHTML = `${Math.round(speedKmh)}`;
-            if (currentTheme === 'analog') drawGauge(speedKmh); // [新增] 更新指針
+            if (currentTheme === 'analog') drawGauge(speedKmh); // 更新指針
 
             const now = Date.now();
             const overpassServers = ["https://overpass-api.de/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
