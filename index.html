@@ -4,9 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>防扣牌預警系統</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <style>
+        /* 全域盒模型設定 */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
         /* --- 全域設定 --- */
         body {
             background-color: #000;
@@ -20,10 +28,8 @@
             transition: background-color 0.1s;
         }
 
-        /* HUD 鏡像翻轉效果 */
-        body.hud-mode .main-container {
-            transform: scaleY(-1); 
-        }
+        /* HUD 鏡像翻轉 */
+        body.hud-mode .main-container { transform: scaleY(-1); }
 
         /* 狀態顏色 */
         body.danger { background-color: #b71c1c; animation: flash-red 0.5s infinite alternate; }
@@ -33,21 +39,20 @@
         body.warning #speed-display { color: #000; text-shadow: none; }
         body.warning .text-info { color: #333; }
         body.warning #location-display { background: rgba(0,0,0,0.8); color: #fff; } 
-        body.warning .extra-info { color: #333; text-shadow: none; } /* 黃色警戒時字變黑 */
+        body.warning .extra-info { color: #333; text-shadow: none; }
         @keyframes flash-yellow { from { background-color: #fbc02d; } to { background-color: #ffeb3b; } }
 
-        /* --- 頂部元素 --- */
+        /* --- 頂部第一層 --- */
         #menu-btn {
             position: absolute; top: 20px; left: 20px;
             font-size: 2rem; background: none; border: none; color: #0f0; 
             cursor: pointer; z-index: 100; padding: 5px; opacity: 0.9;
         }
 
-        /* HUD 切換按鈕 */
         #hud-btn {
-            position: absolute; top: 20px; left: 70px; 
-            font-size: 1.2rem; background: #333; border: 1px solid #555; color: #0f0; 
-            cursor: pointer; z-index: 100; padding: 5px 10px; border-radius: 5px; opacity: 0.9;
+            position: absolute; top: 25px; left: 70px; 
+            font-size: 1.1rem; background: #333; border: 1px solid #555; color: #0f0; 
+            cursor: pointer; z-index: 100; padding: 5px 12px; border-radius: 6px; opacity: 0.9;
             font-weight: bold;
         }
 
@@ -59,8 +64,12 @@
             letter-spacing: 2px; z-index: 90;
         }
 
+        /* --- 直向模式佈局 --- */
+        
+        /* 第二層：地點 */
         #location-display {
-            position: absolute; top: 25px; left: 50%; transform: translateX(-50%);
+            position: absolute; top: 85px; 
+            left: 50%; transform: translateX(-50%);
             font-size: 1rem; color: #4caf50; 
             background: #333; 
             padding: 8px 20px;
@@ -69,37 +78,39 @@
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
             box-shadow: 0 2px 10px rgba(0,0,0,0.5);
             z-index: 80;
-            max-width: 60%;
+            max-width: 80%;
             display: flex; align-items: center; gap: 5px;
+            transition: all 0.3s;
         }
         #location-display::before { content: '📍'; filter: hue-rotate(320deg); font-size: 1.1rem; }
 
-        /* [修改] 海拔與羅盤顯示區 (全域絕對定位) */
+        /* 第三層：海拔與方位 */
         .extra-info {
-            position: absolute;
-            z-index: 85;
-            font-family: monospace; 
-            color: #aaa; 
-            font-size: 1.1rem;
-            font-weight: bold;
-            display: flex;
-            gap: 15px;
-            /* 預設直向位置：在位置顯示的下方 */
-            top: 80px; 
-            left: 50%; 
-            transform: translateX(-50%);
+            position: absolute; z-index: 85;
+            font-family: monospace; color: #aaa; font-size: 1.1rem; font-weight: bold;
+            display: flex; gap: 15px;
+            top: 135px; left: 50%; transform: translateX(-50%);
             text-shadow: 0 1px 2px rgba(0,0,0,0.8);
             transition: all 0.3s;
         }
 
-        /* --- 側邊設定欄 --- */
+        /* 主畫面容器 */
+        .main-container {
+            display: flex; flex-direction: column; 
+            align-items: center; justify-content: space-between; 
+            width: 100%; height: 100%; 
+            padding: 10px; 
+            padding-top: 160px; /* 直向時上方留白 */
+        }
+
+        /* --- 側邊選單 --- */
         #settings-drawer {
             position: fixed; top: 0; left: 0;
             width: 85%; max-width: 350px; height: 100%;
             background: rgba(25, 25, 25, 0.98); 
             backdrop-filter: blur(15px);
             box-shadow: 4px 0 15px rgba(0,0,0,0.6);
-            padding: 25px; box-sizing: border-box;
+            padding: 25px; 
             transform: translateX(-100%); transition: transform 0.3s ease-in-out;
             z-index: 200; overflow-y: auto;
             display: flex; flex-direction: column; gap: 25px; 
@@ -111,24 +122,42 @@
             background: rgba(0,0,0,0.6); display: none; z-index: 150;
         }
         #overlay.show { display: block; }
-        
-        .drawer-header { 
-            display: flex; justify-content: space-between; align-items: center; 
-            margin-bottom: 5px; border-bottom: 1px solid #444; padding-bottom: 15px; 
-        }
+        .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; border-bottom: 1px solid #444; padding-bottom: 15px; }
         .drawer-title { font-size: 1.3rem; font-weight: bold; color: #eee; }
         .close-btn { background: none; border: none; color: #aaa; font-size: 1.8rem; cursor: pointer; padding: 0 5px; }
 
-        /* --- 廣告容器 (預設隱藏) --- */
+        /* [修復] 側邊欄按鈕美化 */
+        .drawer-btn {
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white; /* 文字白色 */
+            margin-top: 10px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            transition: opacity 0.2s;
+        }
+        .drawer-btn:active { opacity: 0.8; }
+
+        /* 各別按鈕顏色 */
+        #help-btn { background-color: #607d8b; }          /* 藍灰色 */
+        #history-btn { background-color: #007aff; }       /* 藍色 */
+        #osm-report-btn { background-color: #e91e63; }    /* 粉紅色 */
+        #upload-history-btn { background-color: #009688; } /* 藍綠色 */
+        #test-tts-btn { background-color: #28a745; }      /* 綠色 */
+
+        /* 廣告位 */
         .ad-container {
             width: 100%; min-height: 100px; background: #222; border: 1px dashed #555;
-            display: none; /* 申請通過後改為 flex */
-            align-items: center; justify-content: center;
+            display: none; align-items: center; justify-content: center;
             color: #777; font-size: 0.9rem; margin-bottom: 15px; border-radius: 8px; overflow: hidden;
         }
         .ad-label { display: block; }
 
-        /* --- Modal 共用 --- */
+        /* Modal 共用 */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); z-index: 300;
@@ -142,16 +171,9 @@
             display: flex; flex-direction: column; overflow: hidden;
             border: 1px solid #333;
         }
-        .history-header {
-            padding: 20px; background: #2c2c2e; font-weight: bold; font-size: 1.2rem;
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid #444;
-        }
+        .history-header { padding: 20px; background: #2c2c2e; font-weight: bold; font-size: 1.2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; }
         .history-list { flex: 1; overflow-y: auto; padding: 10px; }
-        .history-item {
-            background: #2c2c2e; margin-bottom: 10px; padding: 15px;
-            border-radius: 12px; display: flex; flex-direction: column; gap: 8px;
-        }
+        .history-item { background: #2c2c2e; margin-bottom: 10px; padding: 15px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; }
         .h-date { color: #888; font-size: 0.8rem; }
         .h-stats { display: flex; justify-content: space-between; font-size: 1rem; font-weight: bold; margin-top: 5px; }
         .h-stat-box { text-align: center; }
@@ -159,141 +181,84 @@
         .h-val { color: #fff; }
         .h-val.max { color: #ff3b30; }
         .empty-msg { text-align: center; color: #666; margin-top: 50px; }
-        .btn-link { 
-            background: #28a745; color: white; border: none; padding: 6px 12px; 
-            border-radius: 6px; cursor: pointer; font-size: 0.8rem; text-decoration: none; display:inline-block;
-        }
-        .btn-set-speed {
-            background: #444; color: #fff; border: 1px solid #666; padding: 5px 10px;
-            margin-right: 5px; border-radius: 5px; cursor: pointer;
-        }
-        .btn-set-speed:hover { background: #666; }
-        
-        .btn-upload {
-            background: #007aff; color: white; border: none; padding: 8px 12px; 
-            border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 10px;
-            display: inline-flex; align-items: center; gap: 5px;
-        }
+        .btn-link { background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; text-decoration: none; display:inline-block; }
+        .btn-set-speed { background: #444; color: #fff; border: 1px solid #666; padding: 5px 10px; margin-right: 5px; border-radius: 5px; cursor: pointer; }
+        .btn-upload { background: #007aff; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 10px; display: inline-flex; align-items: center; gap: 5px; }
         .btn-upload:disabled { background: #555; cursor: not-allowed; opacity: 0.7; }
         .btn-gpx { background: #9c27b0; margin-left: 5px; }
         .clear-btn { color: #ff3b30; background: none; border: none; font-size: 0.9rem; cursor: pointer; }
 
-        /* 說明 Modal 樣式 */
         .help-content { padding: 20px; color: #ddd; line-height: 1.6; overflow-y: auto; }
         .help-content h3 { color: #007aff; margin-top: 0; }
-        .help-content ul { padding-left: 20px; margin-bottom: 20px; }
-        .help-content li { margin-bottom: 10px; }
         .help-footer { margin-top: 20px; text-align: center; font-size: 0.8rem; color: #666; border-top: 1px solid #333; padding-top: 10px; }
 
         /* 地圖 Modal */
         #map-container { flex: 1; width: 100%; position: relative; }
         #trip-map { width: 100%; height: 100%; background: #000; }
-        .back-btn { 
-            position: absolute; top: 20px; right: 20px; left: auto; z-index: 2000;
-            background: #007aff; color: #fff; border: none;
-            padding: 10px 24px; border-radius: 30px; cursor: pointer; font-weight: bold; font-size: 1rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.6); transition: transform 0.1s;
-        }
+        .back-btn { position: absolute; top: 20px; right: 20px; left: auto; z-index: 2000; background: #007aff; color: #fff; border: none; padding: 10px 24px; border-radius: 30px; cursor: pointer; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.6); transition: transform 0.1s; }
         .back-btn:active { transform: scale(0.95); }
 
-        /* --- 主畫面佈局 --- */
-        .main-container {
-            display: flex; flex-direction: column; 
-            align-items: center; justify-content: space-between; 
-            width: 100%; height: 100%; padding: 10px; box-sizing: border-box; padding-top: 60px;
-        }
-        .dashboard {
-            flex-grow: 1; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; width: 100%; transition: all 0.3s;
-        }
-        #speed-display {
-            font-weight: bold; line-height: 1; text-shadow: 0 0 20px rgba(0,255,0,0.8);
-            color: #0f0; font-size: 28vh; margin: 0; padding: 0; transition: color 0.2s;
-            font-family: 'Arial Black', sans-serif;
-        }
-        #speed-display::after {
-            content: 'km/h'; display: block; font-size: 1.5rem; 
-            color: #0f0; text-align: center; font-weight: normal; margin-top: -10px; text-shadow: none; opacity: 0.8;
-        }
+        .dashboard { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; transition: all 0.3s; }
+        #speed-display { font-weight: bold; line-height: 1; text-shadow: 0 0 20px rgba(0,255,0,0.8); color: #0f0; font-size: 28vh; margin: 0; padding: 0; transition: color 0.2s; font-family: 'Arial Black', sans-serif; }
+        #speed-display::after { content: 'km/h'; display: block; font-size: 1.5rem; color: #0f0; text-align: center; font-weight: normal; margin-top: -10px; text-shadow: none; opacity: 0.8; }
         body.danger #speed-display { color: #fff; text-shadow: none; }
         body.danger #speed-display::after { color: #fff; }
 
         .info-area { display: flex; align-items: center; gap: 20px; margin-top: 10px; opacity: 0.9; }
-        
-        /* 速限牌 */
         .limit-container { position: relative; display: flex; flex-direction: column; align-items: center; }
-        
-        .limit-sign {
-            width: 80px; height: 80px; background-color: #fff;
-            border: 10px solid #cc0000; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            color: #000; font-weight: bold; font-size: 36px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.5); font-family: Arial, sans-serif; transition: all 0.3s;
-            cursor: pointer; user-select: none;
-        }
+        .limit-sign { width: 80px; height: 80px; background-color: #fff; border: 10px solid #cc0000; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #000; font-weight: bold; font-size: 36px; box-shadow: 0 0 15px rgba(0,0,0,0.5); font-family: Arial, sans-serif; transition: all 0.3s; cursor: pointer; user-select: none; }
         .limit-sign:active { transform: scale(0.9); }
         .limit-sign.unknown { border-color: #777; color: #777; font-size: 40px; } 
-        
-        /* 回報按鈕 */
-        #report-btn {
-            margin-top: 10px; background: #ff9800; color: #000; font-weight: bold;
-            border: none; padding: 8px 16px; border-radius: 20px; font-size: 1rem;
-            cursor: pointer; display: none; animation: pop 0.3s ease-out; box-shadow: 0 0 10px #ff9800;
-        }
+        #report-btn { margin-top: 10px; background: #ff9800; color: #000; font-weight: bold; border: none; padding: 8px 16px; border-radius: 20px; font-size: 1rem; cursor: pointer; display: none; animation: pop 0.3s ease-out; box-shadow: 0 0 10px #ff9800; }
         #report-btn:active { transform: scale(0.95); }
         @keyframes pop { from {transform: scale(0);} to {transform: scale(1);} }
 
         .threshold-info { display: flex; flex-direction: column; align-items: flex-start; }
-        .threshold-badge { 
-            color: #ffeb3b; border: 1px solid #555; padding: 4px 10px; 
-            border-radius: 6px; background: rgba(0,0,0,0.6); font-size: 1rem; margin-bottom: 5px;
-        }
+        .threshold-badge { color: #ffeb3b; border: 1px solid #555; padding: 4px 10px; border-radius: 6px; background: rgba(0,0,0,0.6); font-size: 1rem; margin-bottom: 5px; }
         body.warning .threshold-badge { color: #000; border-color: #333; }
         .limit-source { font-size: 0.8rem; color: #4caf50; font-weight: bold; }
 
-        /* --- 底部控制區 --- */
+        /* 底部控制區 */
         .primary-controls { 
-            width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 10px; 
-            background: #1c1c1e; padding: 15px; border-radius: 20px; margin-bottom: 10px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.5); transition: all 0.3s;
+            width: 94%; 
+            max-width: 400px; 
+            display: flex; flex-direction: column; gap: 10px; 
+            background: #1c1c1e; 
+            padding: 15px; 
+            border-radius: 20px; margin-bottom: 10px; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5); transition: all 0.3s; 
         }
         .control-group-left { display: flex; flex-direction: column; gap: 10px; width: 100%; }
         .quick-presets { display: flex; gap: 8px; width: 100%; }
-        .preset-btn { 
-            background: #3a3a3c; color: #fff; border: none; padding: 12px 0; 
-            font-size: 1rem; border-radius: 8px; flex: 1; font-weight: bold;
-        }
+        .preset-btn { background: #3a3a3c; color: #fff; border: none; padding: 12px 0; font-size: 1rem; border-radius: 8px; flex: 1; font-weight: bold; }
         .preset-btn:active { background: #555; }
+        
         .adjust-row { display: flex; align-items: center; gap: 8px; height: 45px; }
+        
+        /* 按鈕固定寬度 */
         .adjust-btn { 
-            background: #3a3a3c; color: white; border: none; width: 60px; height: 100%; 
-            font-size: 1.2rem; border-radius: 8px; cursor: pointer; 
+            background: #3a3a3c; color: white; border: none; 
+            flex: 0 0 60px; 
+            height: 100%; font-size: 1.2rem; border-radius: 8px; cursor: pointer; 
         }
+        
+        /* 輸入框 */
         input[type="number"] { 
-            flex-grow: 1; height: 100%; font-size: 1.5rem; font-weight: bold;
-            border-radius: 8px; border: none; text-align: center; background: #2c2c2e; color: #fff; padding: 0;
+            flex-grow: 1; min-width: 50px; 
+            height: 100%; font-size: 1.5rem; font-weight: bold; 
+            border-radius: 8px; border: none; text-align: center; background: #2c2c2e; color: #fff; padding: 0; 
         }
-        #toggle-btn {
-            width: 100%; padding: 15px; font-size: 1.2rem; border: none; border-radius: 12px; cursor: pointer; 
-            font-weight: bold; color: white; background-color: #007aff; display: flex; align-items: center; justify-content: center; gap: 8px;
-        }
+        
+        #toggle-btn { width: 100%; padding: 15px; font-size: 1.2rem; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; color: white; background-color: #007aff; display: flex; align-items: center; justify-content: center; gap: 8px; }
         #toggle-btn.active { background-color: #ff3b30; }
 
-        /* --- 設定選單元件 --- */
+        /* 輸入框樣式 */
         .input-group { text-align: left; width: 100%; }
         .input-group label { display: block; color: #bbb; font-size: 0.95rem; margin-bottom: 8px; }
         input[type="text"] { width: 100%; padding: 12px; font-size: 1rem; border-radius: 8px; border: 1px solid #555; background: #333; color: #fff; box-sizing: border-box; }
         .file-upload { position: relative; overflow: hidden; display: block; width: 100%; }
         .file-upload input[type="file"] { position: absolute; top: 0; right: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
         .file-btn { background-color: #333; color: #ddd; padding: 12px; border-radius: 8px; display: block; text-align: center; border: 1px dashed #777; font-size: 0.9rem; }
-        .drawer-btn { width: 100%; padding: 12px; font-size: 1rem; border: none; border-radius: 8px; cursor: pointer; color: white; margin-top: 10px; font-weight: bold; margin-bottom: 10px; }
-        #test-file-btn { background-color: #ff9800; }
-        #test-tts-btn { background-color: #28a745; }
-        #pip-btn { background-color: #9c27b0; }
-        #history-btn { background-color: #007aff; }
-        #osm-report-btn { background-color: #e91e63; }
-        #upload-history-btn { background-color: #009688; }
-        #help-btn { background-color: #607d8b; }
         #status { margin-top: auto; padding-bottom: 10px; font-size: 0.8rem; color: #666; text-align: center; }
         #pip-canvas { display: none; }
         #pip-video { position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; }
@@ -314,15 +279,18 @@
             .preset-btn { padding: 8px 0; font-size: 0.9rem; }
             .adjust-row { height: 40px; }
 
-            /* [修改] 橫向時，海拔與羅盤移到右上角 (時鐘下方) */
+            /* 橫向：地點置頂 */
+            #location-display { top: 25px; max-width: 60%; }
+            
+            /* 橫向：海拔與羅盤移到右上角 (時鐘下方) */
             .extra-info {
-                top: 70px; /* 時鐘下方 */
+                top: 70px;
                 right: 20px;
                 left: auto;
                 transform: none;
-                flex-direction: column; /* 垂直排列 */
+                flex-direction: column;
                 gap: 5px;
-                align-items: flex-end; /* 靠右對齊 */
+                align-items: flex-end;
             }
         }
     </style>
@@ -433,7 +401,7 @@
                     <li><b>直接修改：</b> <span style="color:#ff9800">點擊主畫面的速限圓圈</span>，即可直接修正該路段速限。</li>
                     <li><b>GPX 匯出：</b> 在行車紀錄列表中，點擊紫色按鈕可下載軌跡檔。</li>
                 </ul>
-                <div class="help-footer">作者:MiniKao<br>Web Version 2.0</div>
+                <div class="help-footer">作者:MiniKao<br>Web Version 2.3</div>
             </div>
         </div>
     </div>
@@ -524,7 +492,6 @@
         let isMonitoring = false; 
         let lastOsmCheckTime = 0;
         let lastAddressCheckTime = 0; 
-        
         let isFirstFix = true;
 
         // Trip vars
@@ -550,6 +517,13 @@
             if (!localStorage.getItem('hasSeenHelp')) {
                 showHelp();
                 localStorage.setItem('hasSeenHelp', 'true');
+            }
+            
+            // PWA Service Worker 註冊
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(() => console.log('Service Worker Registered'))
+                    .catch(err => console.log('SW Registration Failed:', err));
             }
         });
 
