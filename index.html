@@ -774,7 +774,7 @@
         function initGPS() {
             if (navigator.geolocation) {
                 statusDiv.textContent = "定位中...";
-                locationDisplay.textContent = "📍 定位中...";
+                locationDisplay.textContent = "定位中...";
                 watchId = navigator.geolocation.watchPosition(updatePosition, handleError, { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 });
             } else { alert("此瀏覽器不支援 GPS"); }
         }
