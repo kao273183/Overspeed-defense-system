@@ -87,18 +87,12 @@
         .drawer-title { font-size: 1.3rem; font-weight: bold; color: #eee; }
         .close-btn { background: none; border: none; color: #aaa; font-size: 1.8rem; cursor: pointer; padding: 0 5px; }
 
-        /* --- 廣告容器樣式 (目前隱藏) --- */
+        /* --- 廣告容器 (預設隱藏) --- */
         .ad-container {
-            width: 100%;
-            min-height: 100px;
-            background: #222;
-            border: 1px dashed #555;
-            /* 🔥 [重要] 預設隱藏，申請好廣告後請改成 display: flex; */
-            display: none; 
+            width: 100%; min-height: 100px; background: #222; border: 1px dashed #555;
+            display: none; /* 申請通過後改為 flex */
             align-items: center; justify-content: center;
-            color: #777; font-size: 0.9rem;
-            margin-bottom: 15px; border-radius: 8px;
-            overflow: hidden;
+            color: #777; font-size: 0.9rem; margin-bottom: 15px; border-radius: 8px; overflow: hidden;
         }
         .ad-label { display: block; }
 
@@ -194,8 +188,7 @@
             display: flex; justify-content: center; align-items: center;
             color: #000; font-weight: bold; font-size: 36px;
             box-shadow: 0 0 15px rgba(0,0,0,0.5); font-family: Arial, sans-serif; transition: all 0.3s;
-            cursor: pointer; /* 讓滑鼠變成手指 */
-            user-select: none;
+            cursor: pointer; user-select: none;
         }
         .limit-sign:active { transform: scale(0.9); }
         .limit-sign.unknown { border-color: #777; color: #777; font-size: 40px; } 
@@ -374,7 +367,7 @@
                     <li>本網頁版具備「防休眠」功能，但請盡量保持螢幕開啟以獲得最佳 GPS 訊號。</li>
                     <li>速限資料來自 OpenStreetMap (OSM)，僅供參考，請以實際路況為準。</li>
                 </ul>
-                <div class="help-footer">作者:MiniKao<br>Web Version 1.3<br>Designed for Safe Driving</div>
+                <div class="help-footer">作者:MiniKao<br>Web Version 1.5<br>Designed for Safe Driving</div>
             </div>
         </div>
     </div>
@@ -541,8 +534,7 @@
                 if (!isNaN(newLimit)) {
                     saveCustomLimit(currentMissingLat, currentMissingLon, newLimit);
                     setLimit(newLimit);
-                    updateVisualSign(newLimit, false, true); 
-                    updateThresholdDisplay();
+                    // 這裡 setLimit 內會自己檢查 hasLocal 並更新 UI
                     alert(`✅ 已修正為 ${newLimit} km/h，下次經過會自動套用。`);
                 }
             }
@@ -741,10 +733,20 @@
             });
         }
 
-        // --- 主要邏輯 ---
+        // --- 主要邏輯 (修正版) ---
         window.setLimit = function(val) {
             limitInput.value = val;
-            updateVisualSign(val, false);
+            
+            // [修正] 使用 currentMissingLat 來檢查 (解決未啟動監控時抓不到 lastLat 的問題)
+            let hasLocal = false;
+            if (currentMissingLat && currentMissingLon) {
+                const saved = findCustomLimit(currentMissingLat, currentMissingLon);
+                if (saved !== undefined && saved !== null) {
+                    hasLocal = true;
+                }
+            }
+
+            updateVisualSign(val, false, false, false, hasLocal); 
             updateThresholdDisplay();
             updatePiP(0, val);
         };
@@ -911,7 +913,8 @@
             }
         }
 
-        function updateVisualSign(val, isAuto, isCustom = false, isDefault = false) {
+        // [修改] 支援顯示本地紀錄提示
+        function updateVisualSign(val, isAuto, isCustom = false, isDefault = false, hasLocalOverride = false) {
             if (val && val > 0) {
                 visualLimit.textContent = val;
                 visualLimit.classList.remove('unknown');
@@ -923,12 +926,17 @@
                 } else {
                     reportBtn.style.display = 'none'; 
                     if (isCustom) {
-                        // [修改] 增加點擊修改的提示
-                        limitSourceText.innerHTML = "📝 本地記憶 <br>(點擊限速圖示修改)";
+                        limitSourceText.innerHTML = "📝 本地記憶 (點擊修改)";
                         limitSourceText.style.color = "#ff9800";
                     } else {
-                        limitSourceText.innerHTML = isAuto ? "OSM 自動" : "手動設定";
-                        limitSourceText.style.color = isAuto ? "#4caf50" : "#aaa";
+                        // 這裡處理「手動設定」但「有本地紀錄」的情況
+                        if (hasLocalOverride) {
+                            limitSourceText.innerHTML = "手動設定<br><span style='color:#ff9800;font-size:0.7rem;'>已有📝 本地記憶<br>(點擊圖示修改)</span>";
+                            limitSourceText.style.color = "#aaa"; 
+                        } else {
+                            limitSourceText.innerHTML = isAuto ? "OSM 自動" : "手動設定";
+                            limitSourceText.style.color = isAuto ? "#4caf50" : "#aaa";
+                        }
                     }
                 }
             } else {
