@@ -118,16 +118,31 @@
             position: relative;
         }
 
+        /* 數位時速表 (預設) */
         #speed-display {
             font-weight: bold; line-height: 1; text-shadow: 0 0 20px rgba(0,255,0,0.8);
             color: #0f0; font-size: 28vh; margin: 0; padding: 0; transition: color 0.2s, transform 0.5s;
             font-family: 'Arial Black', sans-serif;
             z-index: 10; 
+            display: block; /* 預設顯示 */
         }
         #speed-display::after {
             content: 'km/h'; display: block; font-size: 1.5rem; 
             color: #0f0; text-align: center; font-weight: normal; margin-top: -10px; text-shadow: none; opacity: 0.8;
         }
+
+        /* [新增] 指針時速表 */
+        #analog-gauge {
+            display: none; /* 預設隱藏 */
+            width: 35vh; height: 35vh; /* 跟數位字體差不多大 */
+            max-width: 300px; max-height: 300px;
+            z-index: 10;
+        }
+
+        /* [主題] 當 Body 有 analog-theme class 時 */
+        body.theme-analog #speed-display { display: none; }
+        body.theme-analog #analog-gauge { display: block; }
+
         body.danger #speed-display { color: #fff; text-shadow: none; }
         body.danger #speed-display::after { color: #fff; }
 
@@ -284,6 +299,11 @@
                 text-align: center; line-height: 0.9; 
                 z-index: 10;
             }
+
+            /* 橫向模式的指針也要調整大小 */
+            #analog-gauge {
+                width: 45vh; height: 45vh;
+            }
             
             .info-area { margin-top: 0; flex-direction: row; z-index: 10; gap: 10px; /* [瘦身] 縮小 gap */ }
             
@@ -378,6 +398,14 @@
         </div>
 
         <div class="input-group">
+            <label>儀表板風格</label>
+            <div style="display:flex; gap:10px;">
+                <button class="drawer-btn" style="background:#444;" onclick="setTheme('digital')">🔢 數位</button>
+                <button class="drawer-btn" style="background:#444;" onclick="setTheme('analog')">⌚ 指針</button>
+            </div>
+        </div>
+
+        <div class="input-group">
             <label>資料管理</label>
             <button class="drawer-btn" id="history-btn" onclick="showHistory()">📊 查看行車紀錄</button>
             <button class="drawer-btn" id="osm-report-btn" onclick="showOsmReports()">📝 查看缺漏回報</button>
@@ -420,7 +448,6 @@
     <div id="help-modal" class="modal-overlay">
         <div class="modal-container">
             <div class="history-header"><span>關於本系統</span><button class="close-btn" onclick="closeHelp()" style="color:#fff;font-size:1.5rem;">×</button></div>
-            
             <div class="help-content">
                 <h3>🚀 如何開始？</h3>
                 <ul>
@@ -432,6 +459,11 @@
                 <ul>
                     <li><b>黃色預警：</b> 超過速限但未達扣牌標準，發出短促「嗶嗶聲」。</li>
                     <li><b>紅色警報：</b> 超過扣牌標準 (速限+38)，螢幕閃爍並語音大喊「嚴重超速」。</li>
+                </ul>
+
+                <h3>🎨 儀表板主題</h3>
+                <ul>
+                    <li>在左上角選單中，您可以切換 <b>「🔢 數位」</b> 或 <b>「⌚ 指針」</b> 兩種風格。</li>
                 </ul>
 
                 <h3>📍 速限回報 / 修改</h3>
@@ -459,7 +491,7 @@
                     <li>速限資料來自 OpenStreetMap (OSM)，僅供參考，請以實際路況為準。</li>
                 </ul>
 
-                <div class="help-footer">作者:MiniKao<br>Web Version 2.13<br>Designed for Safe Driving</div>
+                <div class="help-footer">作者:MiniKao<br>Web Version 2.14<br>Designed for Safe Driving</div>
             </div>
         </div>
     </div>
@@ -476,6 +508,8 @@
             </div>
 
             <div id="speed-display">0</div> 
+            
+            <canvas id="analog-gauge" width="400" height="400"></canvas>
             
             <div class="info-area">
                 <div class="limit-container">
@@ -507,6 +541,7 @@
 
     <script>
         const speedDisplay = document.getElementById('speed-display');
+        const analogGauge = document.getElementById('analog-gauge'); // [新增]
         const locationDisplay = document.getElementById('location-display');
         const limitInput = document.getElementById('limit-input');
         const visualLimit = document.getElementById('visual-limit');
@@ -568,13 +603,20 @@
         let miniMapPolyline = null;
         let miniMapPath = [];
 
+        let currentTheme = localStorage.getItem('speed_theme') || 'digital'; // [新增]
+
         const TOLERANCE = 38; 
         const PRE_WARNING_BUFFER = 5; 
         const synth = window.speechSynthesis;
 
         window.addEventListener('load', () => {
             if (!localStorage.getItem('hasSeenHelp')) { showHelp(); localStorage.setItem('hasSeenHelp', 'true'); }
-            //if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+            // PWA disabled for dev
+            // if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+            
+            // 初始化主題
+            setTheme(currentTheme);
+            drawGauge(0); // 畫初始 0
         });
 
         function updateClock() {
@@ -623,6 +665,105 @@
                 }
             }
         };
+
+        // --- 主題切換邏輯 ---
+        window.setTheme = function(theme) {
+            currentTheme = theme;
+            localStorage.setItem('speed_theme', theme);
+            
+            if (theme === 'analog') {
+                body.classList.add('theme-analog');
+            } else {
+                body.classList.remove('theme-analog');
+            }
+            if(drawer.classList.contains('open')) toggleMenu(); // 關閉選單
+        };
+
+        // --- 指針儀表板繪製 ---
+        function drawGauge(speed) {
+            const canvas = analogGauge;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            const cx = w / 2;
+            const cy = h / 2;
+            const r = w / 2 - 20;
+
+            // 清空
+            ctx.clearRect(0, 0, w, h);
+
+            // 判斷顏色狀態
+            let mainColor = '#0f0'; // 綠色
+            if (body.classList.contains('danger')) mainColor = '#fff'; // 危險變白(因為背景紅)
+            else if (body.classList.contains('warning')) mainColor = '#000'; // 警告變黑(因為背景黃)
+
+            // 繪製外圈
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0.75 * Math.PI, 2.25 * Math.PI);
+            ctx.lineWidth = 15;
+            ctx.strokeStyle = '#333';
+            ctx.stroke();
+
+            // 繪製刻度
+            ctx.fillStyle = '#aaa';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            for (let i = 0; i <= 240; i += 20) {
+                const angle = 0.75 * Math.PI + (i / 240) * (1.5 * Math.PI);
+                const tx = cx + (r - 35) * Math.cos(angle);
+                const ty = cy + (r - 35) * Math.sin(angle);
+                
+                // 大刻度線
+                const x1 = cx + (r - 10) * Math.cos(angle);
+                const y1 = cy + (r - 10) * Math.sin(angle);
+                const x2 = cx + r * Math.cos(angle);
+                const y2 = cy + r * Math.sin(angle);
+                
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#fff';
+                ctx.stroke();
+
+                ctx.fillText(i, tx, ty);
+            }
+
+            // 繪製指針
+            // 限制指針不超過 240
+            const displaySpeed = Math.min(speed, 240);
+            const needleAngle = 0.75 * Math.PI + (displaySpeed / 240) * (1.5 * Math.PI);
+            
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + (r - 20) * Math.cos(needleAngle), cy + (r - 20) * Math.sin(needleAngle));
+            ctx.lineWidth = 8;
+            ctx.strokeStyle = mainColor; // 跟隨狀態變色
+            ctx.lineCap = 'round';
+            
+            // 陰影
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = mainColor;
+            ctx.stroke();
+            ctx.shadowBlur = 0; // 重置
+
+            // 中心圓點
+            ctx.beginPath();
+            ctx.arc(cx, cy, 10, 0, 2 * Math.PI);
+            ctx.fillStyle = '#555';
+            ctx.fill();
+
+            // 數字顯示 (小)
+            ctx.fillStyle = mainColor;
+            ctx.font = 'bold 40px Arial';
+            ctx.fillText(Math.round(speed), cx, cy + 50);
+            
+            ctx.font = '16px Arial';
+            ctx.fillStyle = '#888';
+            ctx.fillText('km/h', cx, cy + 80);
+        }
 
         function initMiniMap() {
             miniMap = L.map('realtime-map', { 
@@ -905,6 +1046,8 @@
             }
 
             speedDisplay.innerHTML = `${Math.round(speedKmh)}`;
+            if (currentTheme === 'analog') drawGauge(speedKmh); // [新增] 更新指針
+
             const now = Date.now();
             const overpassServers = ["https://overpass-api.de/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
 
