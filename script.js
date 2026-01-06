@@ -6,7 +6,8 @@ const visualLimit = document.getElementById('visual-limit');
 const limitSourceText = document.getElementById('limit-source-text');
 const alarmThresholdText = document.getElementById('alarm-threshold-text');
 const reportBtn = document.getElementById('report-btn');
-const hudBtn = document.getElementById('hud-btn');
+// [修正] 指向側邊選單裡的按鈕 ID
+const hudBtn = document.getElementById('drawer-hud-btn');
 const minimapBtn = document.getElementById('minimap-btn'); 
 const altitudeDisplay = document.getElementById('altitude-display'); 
 const headingDisplay = document.getElementById('heading-display'); 
@@ -99,7 +100,7 @@ testTtsBtn.addEventListener('click', () => { playCustomSound(); setTimeout(() =>
 
 window.toggleHud = function() {
     body.classList.toggle('hud-mode');
-    if(drawer.classList.contains('open')) toggleMenu(); // 關閉選單
+    if(drawer.classList.contains('open')) toggleMenu(); 
 };
 
 window.toggleMiniMap = function() {
@@ -464,130 +465,130 @@ function updatePosition(position) {
             const dist = getDistanceFromLatLonInKm(lastLat, lastLon, lat, lon);
             if (speedKmh > 2 && dist > 0.0005 && dist < 0.2) tripDistance += dist;
             if (dist > 0.01) currentTripPath.push([lat, lon]);
-        } else currentTripPath.push([lat, lon]);
-        if (speedKmh > tripMaxSpeed) tripMaxSpeed = speedKmh;
-        lastLat = lat; lastLon = lon;
-    }
+                } else currentTripPath.push([lat, lon]);
+                if (speedKmh > tripMaxSpeed) tripMaxSpeed = speedKmh;
+                lastLat = lat; lastLon = lon;
+            }
 
-    speedDisplay.innerHTML = `${Math.round(speedKmh)}`;
-    if (currentTheme === 'analog') drawGauge(speedKmh); // 更新指針
+            speedDisplay.innerHTML = `${Math.round(speedKmh)}`;
+            if (currentTheme === 'analog') drawGauge(speedKmh); // 更新指針
 
-    const now = Date.now();
-    const overpassServers = ["https://overpass-api.de/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
+            const now = Date.now();
+            const overpassServers = ["https://overpass-api.de/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
 
-    if (autoLimitCheck.checked && ( (now - lastOsmCheckTime > 15000 && speedKmh > 10) || isFirstFix ) ) {
-        const savedLimit = findCustomLimit(lat, lon);
-        if (savedLimit !== undefined) {
-            if (savedLimit !== null) { limitInput.value = savedLimit; updateVisualSign(savedLimit, false, true); updateThresholdDisplay(); } else { updateVisualSign(null, true); }
-        } else {
-            (async () => {
-                let success = false;
-                const query = `[out:json];way[maxspeed](around:20,${lat},${lon});out tags;`;
-                for (const server of overpassServers) {
-                    if(success) break;
-                    try {
-                        const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 3000);
-                        const response = await fetch(`${server}?data=${encodeURIComponent(query)}`, { signal: controller.signal });
-                        clearTimeout(timeoutId); if (!response.ok) throw new Error("Server busy");
-                        const data = await response.json();
-                        if (data.elements && data.elements.length > 0) {
-                            let maxspeed = data.elements[0].tags.maxspeed; let limitNumber = parseInt(maxspeed);
-                            if (!isNaN(limitNumber)) { limitInput.value = limitNumber; updateVisualSign(limitNumber, true); updateThresholdDisplay(); updatePiP(0, limitNumber); success = true; }
+            if (autoLimitCheck.checked && ( (now - lastOsmCheckTime > 15000 && speedKmh > 10) || isFirstFix ) ) {
+                const savedLimit = findCustomLimit(lat, lon);
+                if (savedLimit !== undefined) {
+                    if (savedLimit !== null) { limitInput.value = savedLimit; updateVisualSign(savedLimit, false, true); updateThresholdDisplay(); } else { updateVisualSign(null, true); }
+                } else {
+                    (async () => {
+                        let success = false;
+                        const query = `[out:json];way[maxspeed](around:20,${lat},${lon});out tags;`;
+                        for (const server of overpassServers) {
+                            if(success) break;
+                            try {
+                                const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 3000);
+                                const response = await fetch(`${server}?data=${encodeURIComponent(query)}`, { signal: controller.signal });
+                                clearTimeout(timeoutId); if (!response.ok) throw new Error("Server busy");
+                                const data = await response.json();
+                                if (data.elements && data.elements.length > 0) {
+                                    let maxspeed = data.elements[0].tags.maxspeed; let limitNumber = parseInt(maxspeed);
+                                    if (!isNaN(limitNumber)) { limitInput.value = limitNumber; updateVisualSign(limitNumber, true); updateThresholdDisplay(); updatePiP(0, limitNumber); success = true; }
+                                }
+                            } catch (e) { console.warn("Switching server..."); }
                         }
-                    } catch (e) { console.warn("Switching server..."); }
+                        if (!success) setDefaultLimit(lat, lon);
+                    })();
                 }
-                if (!success) setDefaultLimit(lat, lon);
-            })();
+                lastOsmCheckTime = now; isFirstFix = false; 
+            }
+            if (now - lastAddressCheckTime > 15000) { fetchAddress(lat, lon); lastAddressCheckTime = now; }
+            checkOverSpeed(speedKmh); updatePiP(speedKmh, limitInput.value);
         }
-        lastOsmCheckTime = now; isFirstFix = false; 
-    }
-    if (now - lastAddressCheckTime > 15000) { fetchAddress(lat, lon); lastAddressCheckTime = now; }
-    checkOverSpeed(speedKmh); updatePiP(speedKmh, limitInput.value);
-}
 
-function checkOverSpeed(currentSpeed) {
-    if (!isMonitoring) { body.classList.remove('danger', 'warning'); return; }
-    const baseLimit = parseFloat(limitInput.value);
-    const alarmTrigger = baseLimit + TOLERANCE; 
-    const preWarningStart = alarmTrigger - PRE_WARNING_BUFFER; 
-    const now = Date.now();
-    if (currentSpeed > alarmTrigger) {
-        body.classList.remove('warning'); body.classList.add('danger');
-        if (now - lastSpeakTime > 3000) { playCustomSound(); setTimeout(() => speak(voiceTextInput.value), 1000); lastSpeakTime = now; }
-    } else if (currentSpeed > preWarningStart) {
-        body.classList.remove('danger'); body.classList.add('warning');
-        if (now - lastBeepTime > 1000) { playCustomSound(); lastBeepTime = now; }
-    } else { body.classList.remove('danger', 'warning'); }
-}
-
-async function fetchAddress(lat, lon) {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=zh-TW`;
-    try {
-        const response = await fetch(url); const data = await response.json();
-        if (data && data.address) {
-            const road = data.address.road || ""; const suburb = data.address.suburb || data.address.city_district || ""; const city = data.address.city || "";
-            locationDisplay.textContent = road ? `${suburb} ${road}` : `${city} ${suburb}`;
+        function checkOverSpeed(currentSpeed) {
+            if (!isMonitoring) { body.classList.remove('danger', 'warning'); return; }
+            const baseLimit = parseFloat(limitInput.value);
+            const alarmTrigger = baseLimit + TOLERANCE; 
+            const preWarningStart = alarmTrigger - PRE_WARNING_BUFFER; 
+            const now = Date.now();
+            if (currentSpeed > alarmTrigger) {
+                body.classList.remove('warning'); body.classList.add('danger');
+                if (now - lastSpeakTime > 3000) { playCustomSound(); setTimeout(() => speak(voiceTextInput.value), 1000); lastSpeakTime = now; }
+            } else if (currentSpeed > preWarningStart) {
+                body.classList.remove('danger'); body.classList.add('warning');
+                if (now - lastBeepTime > 1000) { playCustomSound(); lastBeepTime = now; }
+            } else { body.classList.remove('danger', 'warning'); }
         }
-    } catch (err) {}
-}
 
-function setDefaultLimit(lat, lon) {
-    const defaultVal = 50; limitInput.value = defaultVal; updateVisualSign(defaultVal, true, false, true); 
-    updateThresholdDisplay(); updatePiP(0, defaultVal);
-    if (autoLogCheck.checked && lat && lon) { saveCustomLimit(lat, lon, null); }
-}
+        async function fetchAddress(lat, lon) {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=zh-TW`;
+            try {
+                const response = await fetch(url); const data = await response.json();
+                if (data && data.address) {
+                    const road = data.address.road || ""; const suburb = data.address.suburb || data.address.city_district || ""; const city = data.address.city || "";
+                    locationDisplay.textContent = road ? `${suburb} ${road}` : `${city} ${suburb}`;
+                }
+            } catch (err) {}
+        }
 
-function updateVisualSign(val, isAuto, isCustom = false, isDefault = false, hasLocalOverride = false) {
-    if (val && val > 0) {
-        visualLimit.textContent = val; visualLimit.classList.remove('unknown');
-        if (isDefault) {
-            limitSourceText.innerHTML = "⚠️ 預設 (無資)"; limitSourceText.style.color = "#ff9800"; reportBtn.style.display = 'block'; 
-        } else {
-            reportBtn.style.display = 'none'; 
-            if (isCustom) {
-                limitSourceText.innerHTML = "📝 本地記憶 (點擊修改)"; limitSourceText.style.color = "#ff9800";
+        function setDefaultLimit(lat, lon) {
+            const defaultVal = 50; limitInput.value = defaultVal; updateVisualSign(defaultVal, true, false, true); 
+            updateThresholdDisplay(); updatePiP(0, defaultVal);
+            if (autoLogCheck.checked && lat && lon) { saveCustomLimit(lat, lon, null); }
+        }
+
+        function updateVisualSign(val, isAuto, isCustom = false, isDefault = false, hasLocalOverride = false) {
+            if (val && val > 0) {
+                visualLimit.textContent = val; visualLimit.classList.remove('unknown');
+                if (isDefault) {
+                    limitSourceText.innerHTML = "⚠️ 預設 (無資)"; limitSourceText.style.color = "#ff9800"; reportBtn.style.display = 'block'; 
+                } else {
+                    reportBtn.style.display = 'none'; 
+                    if (isCustom) {
+                        limitSourceText.innerHTML = "📝 本地記憶 (點擊修改)"; limitSourceText.style.color = "#ff9800";
+                    } else {
+                        if (hasLocalOverride) { limitSourceText.innerHTML = "手動設定<br><span style='color:#ff9800;font-size:0.7rem;'>已有📝 本地記憶<br>(點擊圖示修改)</span>"; limitSourceText.style.color = "#aaa"; } 
+                        else { limitSourceText.innerHTML = isAuto ? "OSM 自動" : "手動設定"; limitSourceText.style.color = isAuto ? "#4caf50" : "#aaa"; }
+                    }
+                }
             } else {
-                if (hasLocalOverride) { limitSourceText.innerHTML = "手動設定<br><span style='color:#ff9800;font-size:0.7rem;'>已有📝 本地記憶<br>(點擊圖示修改)</span>"; limitSourceText.style.color = "#aaa"; } 
-                else { limitSourceText.innerHTML = isAuto ? "OSM 自動" : "手動設定"; limitSourceText.style.color = isAuto ? "#4caf50" : "#aaa"; }
+                visualLimit.textContent = "?"; visualLimit.classList.add('unknown'); limitSourceText.innerHTML = "⚠️ 無速限資料"; limitSourceText.style.color = "#ff3b30"; reportBtn.style.display = 'block';
             }
         }
-    } else {
-        visualLimit.textContent = "?"; visualLimit.classList.add('unknown'); limitSourceText.innerHTML = "⚠️ 無速限資料"; limitSourceText.style.color = "#ff3b30"; reportBtn.style.display = 'block';
-    }
-}
 
-// [手機語音修復] 
-function speak(text) {
-    if (!synth) return;
-    synth.cancel(); // 重要：先取消之前的，避免卡住
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'zh-TW';
-    u.rate = 1.0; 
-    
-    // 強制抓取中文語音 (修正部分手機預設英文)
-    const voices = synth.getVoices();
-    const zhVoice = voices.find(v => v.lang.includes('zh-TW') || v.lang.includes('zh'));
-    if (zhVoice) u.voice = zhVoice;
+        // [手機語音修復] 
+        function speak(text) {
+            if (!synth) return;
+            synth.cancel(); // 重要：先取消之前的，避免卡住
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'zh-TW';
+            u.rate = 1.0; 
+            
+            // 強制抓取中文語音 (修正部分手機預設英文)
+            const voices = synth.getVoices();
+            const zhVoice = voices.find(v => v.lang.includes('zh-TW') || v.lang.includes('zh'));
+            if (zhVoice) u.voice = zhVoice;
 
-    synth.speak(u);
-}
+            synth.speak(u);
+        }
 
-function handleError(error) { statusDiv.textContent = "❌ GPS 訊號遺失"; locationDisplay.textContent = "GPS 遺失"; }
-
-// PiP Logic
-function updatePiP(currentSpeed, limit) {
-    pipCtx.fillStyle = '#000000'; pipCtx.fillRect(0, 0, 512, 512);
-    const baseLimit = parseInt(limit) || 0;
-    let bgColor = '#000000';
-    if (isMonitoring) {
-        if (currentSpeed > baseLimit + TOLERANCE) bgColor = '#b71c1c'; 
-        else if (currentSpeed > baseLimit + TOLERANCE - PRE_WARNING_BUFFER) bgColor = '#fbc02d'; 
-    }
-    if (bgColor !== '#000000') { pipCtx.fillStyle = bgColor; pipCtx.fillRect(0, 0, 512, 512); }
-    pipCtx.fillStyle = (bgColor === '#b71c1c') ? '#fff' : (bgColor === '#fbc02d' ? '#000' : '#0f0');
-    pipCtx.font = 'bold 250px Arial'; pipCtx.textAlign = 'center'; pipCtx.textBaseline = 'middle';
-    pipCtx.fillText(Math.round(currentSpeed), 256, 200);
-    pipCtx.beginPath(); pipCtx.arc(256, 400, 70, 0, 2 * Math.PI); pipCtx.fillStyle = '#fff'; pipCtx.fill();
-    pipCtx.lineWidth = 10; pipCtx.strokeStyle = '#cc0000'; pipCtx.stroke();
-    pipCtx.fillStyle = '#000'; pipCtx.font = 'bold 60px Arial'; pipCtx.fillText(baseLimit, 256, 403);
-}
+        function handleError(error) { statusDiv.textContent = "❌ GPS 訊號遺失"; locationDisplay.textContent = "GPS 遺失"; }
+        
+        // PiP Logic
+        function updatePiP(currentSpeed, limit) {
+            pipCtx.fillStyle = '#000000'; pipCtx.fillRect(0, 0, 512, 512);
+            const baseLimit = parseInt(limit) || 0;
+            let bgColor = '#000000';
+            if (isMonitoring) {
+                if (currentSpeed > baseLimit + TOLERANCE) bgColor = '#b71c1c'; 
+                else if (currentSpeed > baseLimit + TOLERANCE - PRE_WARNING_BUFFER) bgColor = '#fbc02d'; 
+            }
+            if (bgColor !== '#000000') { pipCtx.fillStyle = bgColor; pipCtx.fillRect(0, 0, 512, 512); }
+            pipCtx.fillStyle = (bgColor === '#b71c1c') ? '#fff' : (bgColor === '#fbc02d' ? '#000' : '#0f0');
+            pipCtx.font = 'bold 250px Arial'; pipCtx.textAlign = 'center'; pipCtx.textBaseline = 'middle';
+            pipCtx.fillText(Math.round(currentSpeed), 256, 200);
+            pipCtx.beginPath(); pipCtx.arc(256, 400, 70, 0, 2 * Math.PI); pipCtx.fillStyle = '#fff'; pipCtx.fill();
+            pipCtx.lineWidth = 10; pipCtx.strokeStyle = '#cc0000'; pipCtx.stroke();
+            pipCtx.fillStyle = '#000'; pipCtx.font = 'bold 60px Arial'; pipCtx.fillText(baseLimit, 256, 403);
+        }
