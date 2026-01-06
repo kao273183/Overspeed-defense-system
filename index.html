@@ -41,38 +41,38 @@
 
         /* --- 頂部按鈕 --- */
         #menu-btn {
-            position: absolute; top: 20px; left: 20px; /* 增加安全距離預留 */
-            left: max(20px, env(safe-area-inset-left)); /* 適配 iPhone 瀏海 */
-            font-size: 2rem; background: none; border: none; color: #0f0; 
+            position: absolute; top: 15px;
+            left: max(20px, env(safe-area-inset-left));
+            font-size: 1.8rem; background: none; border: none; color: #0f0; 
             cursor: pointer; z-index: 100; padding: 5px; opacity: 0.9;
         }
 
         #hud-btn {
-            position: absolute; top: 25px; 
-            left: max(70px, calc(env(safe-area-inset-left) + 50px));
-            font-size: 1.1rem; background: #333; border: 1px solid #555; color: #0f0; 
-            cursor: pointer; z-index: 100; padding: 5px 12px; border-radius: 6px; opacity: 0.9;
+            position: absolute; top: 20px; 
+            left: max(60px, calc(env(safe-area-inset-left) + 40px));
+            font-size: 1rem; background: #333; border: 1px solid #555; color: #0f0; 
+            cursor: pointer; z-index: 100; padding: 4px 10px; border-radius: 6px; opacity: 0.9;
             font-weight: bold;
         }
 
         #minimap-btn {
-            position: absolute; top: 25px; 
-            left: max(145px, calc(env(safe-area-inset-left) + 125px));
-            font-size: 1.1rem; background: #333; border: 1px solid #555; color: #fff; 
-            cursor: pointer; z-index: 100; padding: 5px 12px; border-radius: 6px; opacity: 0.9;
+            position: absolute; top: 20px; 
+            left: max(125px, calc(env(safe-area-inset-left) + 105px));
+            font-size: 1rem; background: #333; border: 1px solid #555; color: #fff; 
+            cursor: pointer; z-index: 100; padding: 4px 10px; border-radius: 6px; opacity: 0.9;
             font-weight: bold;
         }
 
         #clock {
-            position: absolute; top: 20px; 
+            position: absolute; top: 15px; 
             right: max(20px, env(safe-area-inset-right));
             font-family: 'Courier New', Courier, monospace;
-            font-size: 1.5rem; font-weight: bold; color: #0f0;
-            background: #222; padding: 5px 15px; border-radius: 8px;
-            letter-spacing: 2px; z-index: 90;
+            font-size: 1.2rem; font-weight: bold; color: #0f0;
+            background: #222; padding: 4px 10px; border-radius: 8px;
+            letter-spacing: 1px; z-index: 90;
         }
 
-        /* --- 直向佈局 --- */
+        /* --- 直向佈局 (預設) --- */
         #location-display {
             position: absolute; top: 85px; 
             left: 50%; transform: translateX(-50%);
@@ -157,9 +157,14 @@
         @keyframes pop { from {transform: scale(0);} to {transform: scale(1);} }
 
         .threshold-info { display: flex; flex-direction: column; align-items: flex-start; }
-        .threshold-badge { color: #ffeb3b; border: 1px solid #555; padding: 4px 10px; border-radius: 6px; background: rgba(0,0,0,0.6); font-size: 1rem; margin-bottom: 5px; }
+        .threshold-badge { 
+            color: #ffeb3b; border: 1px solid #555; padding: 4px 8px; 
+            border-radius: 6px; background: rgba(0,0,0,0.6); 
+            font-size: 0.9rem; margin-bottom: 5px;
+            white-space: nowrap; 
+        }
         body.warning .threshold-badge { color: #000; border-color: #333; }
-        .limit-source { font-size: 0.8rem; color: #4caf50; font-weight: bold; }
+        .limit-source { font-size: 0.75rem; color: #4caf50; font-weight: bold; white-space: nowrap; }
 
         /* 直向模式的小地圖 */
         #mini-map-overlay {
@@ -174,91 +179,9 @@
             box-shadow: 0 0 20px rgba(0,0,0,0.8);
             background: #222; 
         }
-        
         #realtime-map { width: 100%; height: 100%; }
         
-        .leaflet-layer { /* filter: brightness(0.7) contrast(1.2); */ }
-
-        /* --- 側邊選單 --- */
-        #settings-drawer {
-            position: fixed; top: 0; left: 0;
-            width: 85%; max-width: 350px; height: 100%;
-            background: rgba(25, 25, 25, 0.98); 
-            backdrop-filter: blur(15px);
-            box-shadow: 4px 0 15px rgba(0,0,0,0.6);
-            padding: 25px; 
-            transform: translateX(-100%); transition: transform 0.3s ease-in-out;
-            z-index: 200; overflow-y: auto;
-            display: flex; flex-direction: column; gap: 25px; 
-        }
-        #settings-drawer.open { transform: translateX(0); }
-        
-        #overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); display: none; z-index: 150;
-        }
-        #overlay.show { display: block; }
-        .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; border-bottom: 1px solid #444; padding-bottom: 15px; }
-        .drawer-title { font-size: 1.3rem; font-weight: bold; color: #eee; }
-        .close-btn { background: none; border: none; color: #aaa; font-size: 1.8rem; cursor: pointer; padding: 0 5px; }
-
-        .drawer-btn {
-            width: 100%; padding: 12px; font-size: 1rem; border: none; border-radius: 8px; cursor: pointer; color: white; margin-top: 10px; font-weight: bold; margin-bottom: 10px; transition: opacity 0.2s;
-        }
-        .drawer-btn:active { opacity: 0.8; }
-        #help-btn { background-color: #607d8b; }
-        #history-btn { background-color: #007aff; }
-        #osm-report-btn { background-color: #e91e63; }
-        #upload-history-btn { background-color: #009688; }
-        #test-tts-btn { background-color: #28a745; }
-
-        .ad-container {
-            width: 100%; min-height: 100px; background: #222; border: 1px dashed #555;
-            display: none; align-items: center; justify-content: center;
-            color: #777; font-size: 0.9rem; margin-bottom: 15px; border-radius: 8px; overflow: hidden;
-        }
-        .ad-label { display: block; }
-
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 300;
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-            backdrop-filter: blur(5px);
-        }
-        .modal-overlay.show { display: flex; }
-        .modal-container {
-            width: 90%; max-width: 500px; height: 85%;
-            background: #1c1c1e; border-radius: 20px;
-            display: flex; flex-direction: column; overflow: hidden;
-            border: 1px solid #333;
-        }
-        .history-header { padding: 20px; background: #2c2c2e; font-weight: bold; font-size: 1.2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; }
-        .history-list { flex: 1; overflow-y: auto; padding: 10px; }
-        .history-item { background: #2c2c2e; margin-bottom: 10px; padding: 15px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; }
-        .h-date { color: #888; font-size: 0.8rem; }
-        .h-stats { display: flex; justify-content: space-between; font-size: 1rem; font-weight: bold; margin-top: 5px; }
-        .h-stat-box { text-align: center; }
-        .h-label { font-size: 0.7rem; color: #aaa; display: block; }
-        .h-val { color: #fff; }
-        .h-val.max { color: #ff3b30; }
-        .empty-msg { text-align: center; color: #666; margin-top: 50px; }
-        .btn-link { background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; text-decoration: none; display:inline-block; }
-        .btn-set-speed { background: #444; color: #fff; border: 1px solid #666; padding: 5px 10px; margin-right: 5px; border-radius: 5px; cursor: pointer; }
-        .btn-upload { background: #007aff; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 10px; display: inline-flex; align-items: center; gap: 5px; }
-        .btn-upload:disabled { background: #555; cursor: not-allowed; opacity: 0.7; }
-        .btn-gpx { background: #9c27b0; margin-left: 5px; }
-        .clear-btn { color: #ff3b30; background: none; border: none; font-size: 0.9rem; cursor: pointer; }
-
-        .help-content { padding: 20px; color: #ddd; line-height: 1.6; overflow-y: auto; }
-        .help-content h3 { color: #007aff; margin-top: 0; }
-        .help-footer { margin-top: 20px; text-align: center; font-size: 0.8rem; color: #666; border-top: 1px solid #333; padding-top: 10px; }
-
-        /* 地圖 Modal */
-        #map-container { flex: 1; width: 100%; position: relative; }
-        #trip-map { width: 100%; height: 100%; background: #000; }
-        .back-btn { position: absolute; top: 20px; right: 20px; left: auto; z-index: 2000; background: #007aff; color: #fff; border: none; padding: 10px 24px; border-radius: 30px; cursor: pointer; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.6); transition: transform 0.1s; }
-        .back-btn:active { transform: scale(0.95); }
-
+        /* 底部控制區 */
         .primary-controls { 
             width: 94%; max-width: 400px; 
             display: flex; flex-direction: column; gap: 10px; 
@@ -276,6 +199,53 @@
         #toggle-btn { width: 100%; padding: 15px; font-size: 1.2rem; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; color: white; background-color: #007aff; display: flex; align-items: center; justify-content: center; gap: 8px; }
         #toggle-btn.active { background-color: #ff3b30; }
 
+        /* --- 側邊選單 --- */
+        #settings-drawer { position: fixed; top: 0; left: 0; width: 85%; max-width: 350px; height: 100%; background: rgba(25, 25, 25, 0.98); backdrop-filter: blur(15px); box-shadow: 4px 0 15px rgba(0,0,0,0.6); padding: 25px; transform: translateX(-100%); transition: transform 0.3s ease-in-out; z-index: 200; overflow-y: auto; display: flex; flex-direction: column; gap: 25px; }
+        #settings-drawer.open { transform: translateX(0); }
+        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; z-index: 150; }
+        #overlay.show { display: block; }
+        .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; border-bottom: 1px solid #444; padding-bottom: 15px; }
+        .drawer-title { font-size: 1.3rem; font-weight: bold; color: #eee; }
+        .close-btn { background: none; border: none; color: #aaa; font-size: 1.8rem; cursor: pointer; padding: 0 5px; }
+        .drawer-btn { width: 100%; padding: 12px; font-size: 1rem; border: none; border-radius: 8px; cursor: pointer; color: white; margin-top: 10px; font-weight: bold; margin-bottom: 10px; transition: opacity 0.2s; }
+        .drawer-btn:active { opacity: 0.8; }
+        #help-btn { background-color: #607d8b; }
+        #history-btn { background-color: #007aff; }
+        #osm-report-btn { background-color: #e91e63; }
+        #upload-history-btn { background-color: #009688; }
+        #test-tts-btn { background-color: #28a745; }
+        .ad-container { width: 100%; min-height: 100px; background: #222; border: 1px dashed #555; display: none; align-items: center; justify-content: center; color: #777; font-size: 0.9rem; margin-bottom: 15px; border-radius: 8px; overflow: hidden; }
+        .ad-label { display: block; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 300; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-overlay.show { display: flex; }
+        .modal-container { width: 90%; max-width: 500px; height: 85%; background: #1c1c1e; border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #333; }
+        .history-header { padding: 20px; background: #2c2c2e; font-weight: bold; font-size: 1.2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; }
+        .history-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .history-item { background: #2c2c2e; margin-bottom: 10px; padding: 15px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .h-date { color: #888; font-size: 0.8rem; }
+        .h-stats { display: flex; justify-content: space-between; font-size: 1rem; font-weight: bold; margin-top: 5px; }
+        .h-stat-box { text-align: center; }
+        .h-label { font-size: 0.7rem; color: #aaa; display: block; }
+        .h-val { color: #fff; }
+        .h-val.max { color: #ff3b30; }
+        .empty-msg { text-align: center; color: #666; margin-top: 50px; }
+        .btn-link { background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; text-decoration: none; display:inline-block; }
+        .btn-set-speed { background: #444; color: #fff; border: 1px solid #666; padding: 5px 10px; margin-right: 5px; border-radius: 5px; cursor: pointer; }
+        .btn-upload { background: #007aff; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 10px; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-upload:disabled { background: #555; cursor: not-allowed; opacity: 0.7; }
+        .btn-gpx { background: #9c27b0; margin-left: 5px; }
+        .clear-btn { color: #ff3b30; background: none; border: none; font-size: 0.9rem; cursor: pointer; }
+        
+        .help-content { padding: 20px; color: #ddd; line-height: 1.6; overflow-y: auto; }
+        .help-content h3 { color: #007aff; margin-top: 0; }
+        .help-content ul { padding-left: 20px; margin-bottom: 20px; }
+        .help-content li { margin-bottom: 10px; }
+        .help-footer { margin-top: 20px; text-align: center; font-size: 0.8rem; color: #666; border-top: 1px solid #333; padding-top: 10px; }
+        
+        #map-container { flex: 1; width: 100%; position: relative; }
+        #trip-map { width: 100%; height: 100%; background: #000; }
+        .back-btn { position: absolute; top: 20px; right: 20px; left: auto; z-index: 2000; background: #007aff; color: #fff; border: none; padding: 10px 24px; border-radius: 30px; cursor: pointer; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.6); transition: transform 0.1s; }
+        .back-btn:active { transform: scale(0.95); }
         .input-group { text-align: left; width: 100%; }
         .input-group label { display: block; color: #bbb; font-size: 0.95rem; margin-bottom: 8px; }
         input[type="text"] { width: 100%; padding: 12px; font-size: 1rem; border-radius: 8px; border: 1px solid #555; background: #333; color: #fff; box-sizing: border-box; }
@@ -287,12 +257,12 @@
         #pip-video { position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; }
 
         /* =========================================
-           📱 橫向模式 (Landscape)
+           📱 橫向模式 (Landscape) - 手機專屬優化
            ========================================= */
         @media (orientation: landscape) {
             .main-container { 
-                padding: 10px 80px; /* [修改] 增加左右 padding，避免瀏海遮擋 */
-                padding-top: 60px; 
+                padding: 5px 60px; /* [瘦身] 減少上下 padding */
+                padding-top: 50px; 
                 justify-content: flex-end; 
             }
             
@@ -300,56 +270,76 @@
                 flex-direction: row; 
                 align-items: center; 
                 justify-content: center; 
-                gap: 50px; 
-                margin-bottom: 15px;
+                gap: 30px; 
+                margin-bottom: 10px; /* [瘦身] 減少底部邊距 */
                 width: 100%;
             }
 
-            /* 當地圖開啟時，增加間距把時速和速限推開 */
             .dashboard.map-active {
-                gap: 45vw; /* [修改] 縮小間距配合地圖縮小 */
+                gap: 35vw; /* [瘦身] 縮小地圖推開距離 */
             }
             
             #speed-display { 
-                font-size: 35vh; text-align: center; line-height: 0.9; 
+                font-size: 28vh; /* [瘦身] 縮小字體 */
+                text-align: center; line-height: 0.9; 
                 z-index: 10;
             }
             
-            .info-area { margin-top: 0; flex-direction: row; z-index: 10; }
-            .limit-sign { width: 130px; height: 130px; font-size: 60px; border-width: 12px; }
-            .limit-sign.unknown { font-size: 80px; }
+            .info-area { margin-top: 0; flex-direction: row; z-index: 10; gap: 10px; /* [瘦身] 縮小 gap */ }
             
-            /* [修改] 橫向模式小地圖：內縮尺寸 */
+            /* [瘦身] 縮小限速牌 */
+            .limit-sign { 
+                width: 100px; height: 100px; font-size: 45px; border-width: 8px; 
+            }
+            .limit-sign.unknown { font-size: 60px; }
+            
             #mini-map-overlay {
                 position: absolute;
                 top: 50%; left: 50%;
                 transform: translate(-50%, -50%);
-                
-                width: 40vw; /* [修改] 縮小為 40vw */
-                height: 50vh; /* [修改] 縮小高度 */
-                
+                width: 35vw; /* [瘦身] 縮小地圖寬度 */
+                height: 55vh; 
                 max-width: none; max-height: none;
-                
                 border-radius: 20px;
                 border: none;
                 background: transparent;
                 box-shadow: none;
-                
                 -webkit-mask-image: radial-gradient(circle, black 60%, transparent 95%);
                 mask-image: radial-gradient(circle, black 60%, transparent 95%);
-                
                 z-index: 1;
                 margin: 0;
             }
 
-            .primary-controls { max-width: 850px; width: 95%; flex-direction: row; align-items: stretch; padding: 10px 20px; background: #1c1c1e; gap: 15px; z-index: 20; }
-            .control-group-left { flex: 2; justify-content: space-between; gap: 6px; }
-            #toggle-btn { flex: 1; font-size: 1.4rem; height: auto; }
-            .preset-btn { padding: 8px 0; font-size: 0.9rem; }
-            .adjust-row { height: 40px; }
+            /* [瘦身] 底部控制區優化 */
+            .primary-controls { 
+                max-width: 850px; width: 98%; 
+                flex-direction: row; align-items: stretch; 
+                padding: 8px 20px; /* 減少內距 */
+                background: #1c1c1e; gap: 10px; z-index: 20; 
+                height: 55px; /* 強制縮小高度 */
+                overflow: hidden; /* 防止溢出 */
+            }
+            
+            .control-group-left { 
+                flex: 2; justify-content: center; gap: 5px; 
+                flex-direction: row; /* 改成橫向排列 */
+                align-items: center;
+            }
+            
+            .quick-presets { display: none; /* [瘦身] 橫向時隱藏快速按鈕，節省空間 */ }
+            
+            /* 調整按鈕大小 */
+            #toggle-btn { 
+                flex: 1; font-size: 1.1rem; height: 100%; padding: 0; 
+                white-space: nowrap;
+            }
+            
+            .adjust-row { height: 100%; width: 100%; }
+            .adjust-btn { width: 50px; font-size: 1.2rem; }
+            input[type="number"] { font-size: 1.3rem; }
 
-            #location-display { top: 25px; max-width: 60%; }
-            .extra-info { top: 70px; right: 20px; left: auto; transform: none; flex-direction: column; gap: 5px; align-items: flex-end; }
+            #location-display { top: 15px; max-width: 50%; font-size: 0.9rem; padding: 5px 15px; }
+            .extra-info { top: 55px; right: 20px; left: auto; transform: none; flex-direction: column; gap: 2px; align-items: flex-end; font-size: 0.9rem; }
         }
     </style>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -430,14 +420,46 @@
     <div id="help-modal" class="modal-overlay">
         <div class="modal-container">
             <div class="history-header"><span>關於本系統</span><button class="close-btn" onclick="closeHelp()" style="color:#fff;font-size:1.5rem;">×</button></div>
+            
             <div class="help-content">
                 <h3>🚀 如何開始？</h3>
-                <ul><li>請務必點擊主畫面的藍色 <b>「🚀 啟動偵測」</b> 按鈕，才能開始背景監控與警報。</li></ul>
-                <h3>HUD 模式</h3>
-                <ul><li>點擊左上角 <b>HUD</b> 按鈕，畫面會上下顛倒，適合夜間投影。</li></ul>
-                <h3>📍 小地圖</h3>
-                <ul><li>點擊 <b>🗺️ 地圖</b> 可開啟懸浮地圖。</li><li><b>橫向模式：</b> 地圖會變成半透明背景，嵌入儀表板。</li><li><b>直向模式：</b> 地圖會顯示在右下角。</li></ul>
-                <div class="help-footer">作者:MiniKao<br>Web Version 2.10</div>
+                <ul>
+                    <li>請務必點擊主畫面的藍色 <b>「🚀 啟動偵測」</b> 按鈕，才能開始背景監控與警報。</li>
+                    <li>第一次啟動時，請允許 <b>GPS 權限</b> 與 <b>音效播放</b>。</li>
+                </ul>
+
+                <h3>🔊 警報模式</h3>
+                <ul>
+                    <li><b>黃色預警：</b> 超過速限但未達扣牌標準，發出短促「嗶嗶聲」。</li>
+                    <li><b>紅色警報：</b> 超過扣牌標準 (速限+38)，螢幕閃爍並語音大喊「嚴重超速」。</li>
+                </ul>
+
+                <h3>📍 速限回報 / 修改</h3>
+                <ul>
+                    <li><b>直接修改：</b> <span style="color:#ff9800">點擊主畫面的速限圓圈</span>，即可直接修正該路段速限。</li>
+                    <li><b>一鍵標記：</b> 點擊橘色「📍 標記缺漏」可快速記錄。</li>
+                    <li><b>上傳 OSM：</b> 在側邊選單的「查看缺漏回報」中，可將資料上傳至 OpenStreetMap。</li>
+                </ul>
+
+                <h3>🗺️ 顯示模式</h3>
+                <ul>
+                    <li><b>HUD 模式：</b> 點擊左上角 <b>HUD</b>，畫面上下顛倒，適合夜間投影擋風玻璃。</li>
+                    <li><b>小地圖：</b> 點擊 <b>🗺️ 地圖</b> 開啟。直向時懸浮右下角；橫向時變身為儀表板背景。</li>
+                </ul>
+                
+                <h3>📱 PWA 安裝</h3>
+                <ul>
+                    <li><b>Android：</b> 點擊瀏覽器選單 ->「加到主畫面」。</li>
+                    <li><b>iOS：</b> 點擊分享按鈕 ->「加入主畫面」。</li>
+                </ul>
+
+                <h3>⚠️ 注意事項</h3>
+                <ul>
+                    <li>本網頁版具備「防休眠」功能，但請盡量保持螢幕開啟以獲得最佳 GPS 訊號。</li>
+                    <li>速限資料來自 OpenStreetMap (OSM)，僅供參考，請以實際路況為準。</li>
+                </ul>
+
+                <div class="help-footer">作者:MiniKao<br>Web Version 2.13<br>Designed for Safe Driving</div>
             </div>
         </div>
     </div>
@@ -484,7 +506,6 @@
     </div>
 
     <script>
-        // DOM Elements
         const speedDisplay = document.getElementById('speed-display');
         const locationDisplay = document.getElementById('location-display');
         const limitInput = document.getElementById('limit-input');
@@ -531,7 +552,6 @@
         let lastAddressCheckTime = 0; 
         let isFirstFix = true;
 
-        // Trip vars
         let tripStartTime = null;
         let tripMaxSpeed = 0;
         let tripDistance = 0; 
@@ -543,7 +563,6 @@
         let currentMissingLat = null;
         let currentMissingLon = null;
 
-        // Mini Map vars
         let miniMap = null;
         let miniMapMarker = null;
         let miniMapPolyline = null;
@@ -585,7 +604,6 @@
             else { hudBtn.style.color = "#0f0"; hudBtn.style.borderColor = "#555"; }
         };
 
-        // --- 小地圖邏輯 [修改] ---
         window.toggleMiniMap = function() {
             const el = document.getElementById('mini-map-overlay');
             const dashboard = document.querySelector('.dashboard'); 
@@ -593,11 +611,11 @@
             if (el.style.display === 'block') {
                 el.style.display = 'none';
                 minimapBtn.style.color = '#fff';
-                dashboard.classList.remove('map-active'); // 恢復原狀
+                dashboard.classList.remove('map-active'); 
             } else {
                 el.style.display = 'block';
                 minimapBtn.style.color = '#00e676';
-                dashboard.classList.add('map-active'); // 推開左右元素
+                dashboard.classList.add('map-active'); 
                 
                 if (!miniMap) initMiniMap();
                 else { 
@@ -607,11 +625,10 @@
         };
 
         function initMiniMap() {
-            // [修改] 縮放等級改為 18
             miniMap = L.map('realtime-map', { 
                 zoomControl: false, 
                 attributionControl: false 
-            }).setView([25.0330, 121.5654], 18);
+            }).setView([25.0330, 121.5654], 18); 
             
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
                 maxZoom: 19
@@ -635,7 +652,7 @@
             if (!miniMapPolyline) { miniMapPolyline = L.polyline(miniMapPath, { color: '#00e676', weight: 3 }).addTo(miniMap); } 
             else { miniMapPolyline.setLatLngs(miniMapPath); }
             
-            miniMap.setView(latlng, 18); // [修改] 保持 18 縮放
+            miniMap.setView(latlng, 18); 
             miniMap.invalidateSize(); 
         }
 
