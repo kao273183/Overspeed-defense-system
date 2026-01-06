@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>防扣牌預警系統</title>
     
     <link rel="manifest" href="manifest.json">
@@ -12,10 +12,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <style>
-        /* 全域盒模型設定 */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-        /* --- 全域設定 --- */
         body {
             background-color: #000;
             color: #fff;
@@ -28,7 +26,6 @@
             transition: background-color 0.1s;
         }
 
-        /* HUD 鏡像翻轉 */
         body.hud-mode .main-container { transform: scaleY(-1); }
 
         /* 狀態顏色 */
@@ -42,29 +39,40 @@
         body.warning .extra-info { color: #333; text-shadow: none; }
         @keyframes flash-yellow { from { background-color: #fbc02d; } to { background-color: #ffeb3b; } }
 
-        /* --- 頂部第一層 --- */
+        /* --- 頂部按鈕 --- */
         #menu-btn {
-            position: absolute; top: 20px; left: 20px;
+            position: absolute; top: 20px; left: 20px; /* 增加安全距離預留 */
+            left: max(20px, env(safe-area-inset-left)); /* 適配 iPhone 瀏海 */
             font-size: 2rem; background: none; border: none; color: #0f0; 
             cursor: pointer; z-index: 100; padding: 5px; opacity: 0.9;
         }
 
         #hud-btn {
-            position: absolute; top: 25px; left: 70px; 
+            position: absolute; top: 25px; 
+            left: max(70px, calc(env(safe-area-inset-left) + 50px));
             font-size: 1.1rem; background: #333; border: 1px solid #555; color: #0f0; 
             cursor: pointer; z-index: 100; padding: 5px 12px; border-radius: 6px; opacity: 0.9;
             font-weight: bold;
         }
 
+        #minimap-btn {
+            position: absolute; top: 25px; 
+            left: max(145px, calc(env(safe-area-inset-left) + 125px));
+            font-size: 1.1rem; background: #333; border: 1px solid #555; color: #fff; 
+            cursor: pointer; z-index: 100; padding: 5px 12px; border-radius: 6px; opacity: 0.9;
+            font-weight: bold;
+        }
+
         #clock {
-            position: absolute; top: 20px; right: 20px;
+            position: absolute; top: 20px; 
+            right: max(20px, env(safe-area-inset-right));
             font-family: 'Courier New', Courier, monospace;
             font-size: 1.5rem; font-weight: bold; color: #0f0;
             background: #222; padding: 5px 15px; border-radius: 8px;
             letter-spacing: 2px; z-index: 90;
         }
 
-        /* --- 直向模式佈局 --- */
+        /* --- 直向佈局 --- */
         #location-display {
             position: absolute; top: 85px; 
             left: 50%; transform: translateX(-50%);
@@ -98,6 +106,78 @@
             padding: 10px; 
             padding-top: 160px;
         }
+
+        .dashboard {
+            flex-grow: 1; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            width: 100%; 
+            transition: gap 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        #speed-display {
+            font-weight: bold; line-height: 1; text-shadow: 0 0 20px rgba(0,255,0,0.8);
+            color: #0f0; font-size: 28vh; margin: 0; padding: 0; transition: color 0.2s, transform 0.5s;
+            font-family: 'Arial Black', sans-serif;
+            z-index: 10; 
+        }
+        #speed-display::after {
+            content: 'km/h'; display: block; font-size: 1.5rem; 
+            color: #0f0; text-align: center; font-weight: normal; margin-top: -10px; text-shadow: none; opacity: 0.8;
+        }
+        body.danger #speed-display { color: #fff; text-shadow: none; }
+        body.danger #speed-display::after { color: #fff; }
+
+        .info-area { 
+            display: flex; align-items: center; gap: 20px; margin-top: 10px; opacity: 0.9; z-index: 10; 
+            transition: transform 0.5s;
+        }
+        .limit-container { position: relative; display: flex; flex-direction: column; align-items: center; }
+        
+        .limit-sign {
+            width: 80px; height: 80px; background-color: #fff;
+            border: 10px solid #cc0000; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            color: #000; font-weight: bold; font-size: 36px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5); font-family: Arial, sans-serif; transition: all 0.3s;
+            cursor: pointer; user-select: none;
+        }
+        .limit-sign:active { transform: scale(0.9); }
+        .limit-sign.unknown { border-color: #777; color: #777; font-size: 40px; } 
+        
+        #report-btn {
+            margin-top: 10px; background: #ff9800; color: #000; font-weight: bold;
+            border: none; padding: 8px 16px; border-radius: 20px; font-size: 1rem;
+            cursor: pointer; display: none; animation: pop 0.3s ease-out; box-shadow: 0 0 10px #ff9800;
+        }
+        #report-btn:active { transform: scale(0.95); }
+        @keyframes pop { from {transform: scale(0);} to {transform: scale(1);} }
+
+        .threshold-info { display: flex; flex-direction: column; align-items: flex-start; }
+        .threshold-badge { color: #ffeb3b; border: 1px solid #555; padding: 4px 10px; border-radius: 6px; background: rgba(0,0,0,0.6); font-size: 1rem; margin-bottom: 5px; }
+        body.warning .threshold-badge { color: #000; border-color: #333; }
+        .limit-source { font-size: 0.8rem; color: #4caf50; font-weight: bold; }
+
+        /* 直向模式的小地圖 */
+        #mini-map-overlay {
+            position: fixed;
+            display: none; 
+            z-index: 5;
+            bottom: 140px; right: 10px;
+            width: 140px; height: 140px;
+            border: 2px solid #444;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            background: #222; 
+        }
+        
+        #realtime-map { width: 100%; height: 100%; }
+        
+        .leaflet-layer { /* filter: brightness(0.7) contrast(1.2); */ }
 
         /* --- 側邊選單 --- */
         #settings-drawer {
@@ -179,26 +259,6 @@
         .back-btn { position: absolute; top: 20px; right: 20px; left: auto; z-index: 2000; background: #007aff; color: #fff; border: none; padding: 10px 24px; border-radius: 30px; cursor: pointer; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.6); transition: transform 0.1s; }
         .back-btn:active { transform: scale(0.95); }
 
-        .dashboard { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; transition: all 0.3s; }
-        #speed-display { font-weight: bold; line-height: 1; text-shadow: 0 0 20px rgba(0,255,0,0.8); color: #0f0; font-size: 28vh; margin: 0; padding: 0; transition: color 0.2s; font-family: 'Arial Black', sans-serif; }
-        #speed-display::after { content: 'km/h'; display: block; font-size: 1.5rem; color: #0f0; text-align: center; font-weight: normal; margin-top: -10px; text-shadow: none; opacity: 0.8; }
-        body.danger #speed-display { color: #fff; text-shadow: none; }
-        body.danger #speed-display::after { color: #fff; }
-
-        .info-area { display: flex; align-items: center; gap: 20px; margin-top: 10px; opacity: 0.9; }
-        .limit-container { position: relative; display: flex; flex-direction: column; align-items: center; }
-        .limit-sign { width: 80px; height: 80px; background-color: #fff; border: 10px solid #cc0000; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #000; font-weight: bold; font-size: 36px; box-shadow: 0 0 15px rgba(0,0,0,0.5); font-family: Arial, sans-serif; transition: all 0.3s; cursor: pointer; user-select: none; }
-        .limit-sign:active { transform: scale(0.9); }
-        .limit-sign.unknown { border-color: #777; color: #777; font-size: 40px; } 
-        #report-btn { margin-top: 10px; background: #ff9800; color: #000; font-weight: bold; border: none; padding: 8px 16px; border-radius: 20px; font-size: 1rem; cursor: pointer; display: none; animation: pop 0.3s ease-out; box-shadow: 0 0 10px #ff9800; }
-        #report-btn:active { transform: scale(0.95); }
-        @keyframes pop { from {transform: scale(0);} to {transform: scale(1);} }
-
-        .threshold-info { display: flex; flex-direction: column; align-items: flex-start; }
-        .threshold-badge { color: #ffeb3b; border: 1px solid #555; padding: 4px 10px; border-radius: 6px; background: rgba(0,0,0,0.6); font-size: 1rem; margin-bottom: 5px; }
-        body.warning .threshold-badge { color: #000; border-color: #333; }
-        .limit-source { font-size: 0.8rem; color: #4caf50; font-weight: bold; }
-
         .primary-controls { 
             width: 94%; max-width: 400px; 
             display: flex; flex-direction: column; gap: 10px; 
@@ -226,14 +286,63 @@
         #pip-canvas { display: none; }
         #pip-video { position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; }
 
+        /* =========================================
+           📱 橫向模式 (Landscape)
+           ========================================= */
         @media (orientation: landscape) {
-            .main-container { padding: 10px 40px; padding-top: 60px; justify-content: flex-end; }
-            .dashboard { flex-direction: row; align-items: center; justify-content: center; gap: 50px; margin-bottom: 15px; }
-            #speed-display { font-size: 40vh; text-align: center; line-height: 0.9; }
-            .info-area { margin-top: 0; flex-direction: row; }
+            .main-container { 
+                padding: 10px 80px; /* [修改] 增加左右 padding，避免瀏海遮擋 */
+                padding-top: 60px; 
+                justify-content: flex-end; 
+            }
+            
+            .dashboard { 
+                flex-direction: row; 
+                align-items: center; 
+                justify-content: center; 
+                gap: 50px; 
+                margin-bottom: 15px;
+                width: 100%;
+            }
+
+            /* 當地圖開啟時，增加間距把時速和速限推開 */
+            .dashboard.map-active {
+                gap: 45vw; /* [修改] 縮小間距配合地圖縮小 */
+            }
+            
+            #speed-display { 
+                font-size: 35vh; text-align: center; line-height: 0.9; 
+                z-index: 10;
+            }
+            
+            .info-area { margin-top: 0; flex-direction: row; z-index: 10; }
             .limit-sign { width: 130px; height: 130px; font-size: 60px; border-width: 12px; }
             .limit-sign.unknown { font-size: 80px; }
-            .primary-controls { max-width: 850px; width: 95%; flex-direction: row; align-items: stretch; padding: 10px 20px; background: #1c1c1e; gap: 15px; }
+            
+            /* [修改] 橫向模式小地圖：內縮尺寸 */
+            #mini-map-overlay {
+                position: absolute;
+                top: 50%; left: 50%;
+                transform: translate(-50%, -50%);
+                
+                width: 40vw; /* [修改] 縮小為 40vw */
+                height: 50vh; /* [修改] 縮小高度 */
+                
+                max-width: none; max-height: none;
+                
+                border-radius: 20px;
+                border: none;
+                background: transparent;
+                box-shadow: none;
+                
+                -webkit-mask-image: radial-gradient(circle, black 60%, transparent 95%);
+                mask-image: radial-gradient(circle, black 60%, transparent 95%);
+                
+                z-index: 1;
+                margin: 0;
+            }
+
+            .primary-controls { max-width: 850px; width: 95%; flex-direction: row; align-items: stretch; padding: 10px 20px; background: #1c1c1e; gap: 15px; z-index: 20; }
             .control-group-left { flex: 2; justify-content: space-between; gap: 6px; }
             #toggle-btn { flex: 1; font-size: 1.4rem; height: auto; }
             .preset-btn { padding: 8px 0; font-size: 0.9rem; }
@@ -249,6 +358,7 @@
 
     <button id="menu-btn" onclick="toggleMenu()">☰</button>
     <button id="hud-btn" onclick="toggleHud()">HUD</button>
+    <button id="minimap-btn" onclick="toggleMiniMap()">🗺️ 地圖</button>
 
     <div id="location-display">📍 定位中...</div> 
     <div id="clock">--:--</div>
@@ -325,7 +435,9 @@
                 <ul><li>請務必點擊主畫面的藍色 <b>「🚀 啟動偵測」</b> 按鈕，才能開始背景監控與警報。</li></ul>
                 <h3>HUD 模式</h3>
                 <ul><li>點擊左上角 <b>HUD</b> 按鈕，畫面會上下顛倒，適合夜間投影。</li></ul>
-                <div class="help-footer">作者:MiniKao<br>Web Version 2.4</div>
+                <h3>📍 小地圖</h3>
+                <ul><li>點擊 <b>🗺️ 地圖</b> 可開啟懸浮地圖。</li><li><b>橫向模式：</b> 地圖會變成半透明背景，嵌入儀表板。</li><li><b>直向模式：</b> 地圖會顯示在右下角。</li></ul>
+                <div class="help-footer">作者:MiniKao<br>Web Version 2.10</div>
             </div>
         </div>
     </div>
@@ -337,6 +449,10 @@
 
     <div class="main-container">
         <div class="dashboard">
+            <div id="mini-map-overlay">
+                <div id="realtime-map"></div>
+            </div>
+
             <div id="speed-display">0</div> 
             
             <div class="info-area">
@@ -377,6 +493,7 @@
         const alarmThresholdText = document.getElementById('alarm-threshold-text');
         const reportBtn = document.getElementById('report-btn');
         const hudBtn = document.getElementById('hud-btn');
+        const minimapBtn = document.getElementById('minimap-btn'); 
         const altitudeDisplay = document.getElementById('altitude-display'); 
         const headingDisplay = document.getElementById('heading-display'); 
         
@@ -426,6 +543,12 @@
         let currentMissingLat = null;
         let currentMissingLon = null;
 
+        // Mini Map vars
+        let miniMap = null;
+        let miniMapMarker = null;
+        let miniMapPolyline = null;
+        let miniMapPath = [];
+
         const TOLERANCE = 38; 
         const PRE_WARNING_BUFFER = 5; 
         const synth = window.speechSynthesis;
@@ -461,6 +584,60 @@
             if(body.classList.contains('hud-mode')) { hudBtn.style.color = "#ffeb3b"; hudBtn.style.borderColor = "#ffeb3b"; } 
             else { hudBtn.style.color = "#0f0"; hudBtn.style.borderColor = "#555"; }
         };
+
+        // --- 小地圖邏輯 [修改] ---
+        window.toggleMiniMap = function() {
+            const el = document.getElementById('mini-map-overlay');
+            const dashboard = document.querySelector('.dashboard'); 
+            
+            if (el.style.display === 'block') {
+                el.style.display = 'none';
+                minimapBtn.style.color = '#fff';
+                dashboard.classList.remove('map-active'); // 恢復原狀
+            } else {
+                el.style.display = 'block';
+                minimapBtn.style.color = '#00e676';
+                dashboard.classList.add('map-active'); // 推開左右元素
+                
+                if (!miniMap) initMiniMap();
+                else { 
+                    setTimeout(() => { miniMap.invalidateSize(); }, 100); 
+                }
+            }
+        };
+
+        function initMiniMap() {
+            // [修改] 縮放等級改為 18
+            miniMap = L.map('realtime-map', { 
+                zoomControl: false, 
+                attributionControl: false 
+            }).setView([25.0330, 121.5654], 18);
+            
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19
+            }).addTo(miniMap);
+            
+            if (currentMissingLat && currentMissingLon) {
+                updateMiniMap(currentMissingLat, currentMissingLon);
+            }
+        }
+
+        function updateMiniMap(lat, lon) {
+            if (!miniMap) return;
+            const latlng = [lat, lon];
+            if (!miniMapMarker) {
+                miniMapMarker = L.circleMarker(latlng, { radius: 8, fillColor: '#2979ff', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(miniMap);
+            } else { miniMapMarker.setLatLng(latlng); }
+            
+            miniMapPath.push(latlng);
+            if (miniMapPath.length > 500) miniMapPath.shift(); 
+
+            if (!miniMapPolyline) { miniMapPolyline = L.polyline(miniMapPath, { color: '#00e676', weight: 3 }).addTo(miniMap); } 
+            else { miniMapPolyline.setLatLngs(miniMapPath); }
+            
+            miniMap.setView(latlng, 18); // [修改] 保持 18 縮放
+            miniMap.invalidateSize(); 
+        }
 
         window.toggleMenu = function() {
             drawer.classList.toggle('open');
@@ -695,6 +872,11 @@
 
             currentMissingLat = lat; currentMissingLon = lon;
 
+            // 更新小地圖
+            if (document.getElementById('mini-map-overlay').style.display === 'block') {
+                updateMiniMap(lat, lon);
+            }
+
             if (isMonitoring) {
                 if (lastLat !== null) {
                     const dist = getDistanceFromLatLonInKm(lastLat, lastLon, lat, lon);
@@ -808,9 +990,11 @@
 
         function handleError(error) { statusDiv.textContent = "❌ GPS 訊號遺失"; locationDisplay.textContent = "GPS 遺失"; }
         
+        // PiP Logic
         function updatePiP(currentSpeed, limit) {
             pipCtx.fillStyle = '#000000'; pipCtx.fillRect(0, 0, 512, 512);
-            const baseLimit = parseInt(limit) || 0; let bgColor = '#000000';
+            const baseLimit = parseInt(limit) || 0;
+            let bgColor = '#000000';
             if (isMonitoring) {
                 if (currentSpeed > baseLimit + TOLERANCE) bgColor = '#b71c1c'; 
                 else if (currentSpeed > baseLimit + TOLERANCE - PRE_WARNING_BUFFER) bgColor = '#fbc02d'; 
