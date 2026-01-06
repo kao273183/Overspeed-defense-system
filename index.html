@@ -574,7 +574,7 @@
 
         window.addEventListener('load', () => {
             if (!localStorage.getItem('hasSeenHelp')) { showHelp(); localStorage.setItem('hasSeenHelp', 'true'); }
-            if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+            //if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
         });
 
         function updateClock() {
