@@ -451,8 +451,19 @@ window.showHistory = function () {
     toggleMenu();
     renderHistory();
     const clearBtn = document.getElementById('history-clear-btn');
-    if (clearBtn) clearBtn.style.display = 'none';
+    if (clearBtn) {
+        clearBtn.style.display = 'inline-block';
+        clearBtn.onclick = window.clearHistory;
+    }
     historyModal.classList.add('show');
+};
+
+window.deleteTrip = function (index) {
+    if (!confirm("確定要刪除這筆紀錄嗎？")) return;
+    let records = JSON.parse(localStorage.getItem('trip_records') || "[]");
+    records.splice(index, 1);
+    localStorage.setItem('trip_records', JSON.stringify(records));
+    renderHistory();
 };
 window.closeHistory = function () { historyModal.classList.remove('show'); };
 window.clearHistory = function () { if (confirm('確定要刪除所有紀錄嗎？')) { localStorage.removeItem('trip_records'); renderHistory(); } };
@@ -491,7 +502,7 @@ function renderHistory() {
     if (records.length === 0) { historyListEl.innerHTML = `<div class="empty-msg">尚無紀錄</div>`; return; }
     records.forEach((r, index) => {
         const item = document.createElement('div'); item.className = 'history-item';
-        item.innerHTML = `<div class="h-date">${r.date} - ${r.duration}</div><div class="h-stats"><div class="h-stat-box"><span class="h-label">極速</span><span class="h-val max">${r.maxSpeed}</span></div><div class="h-stat-box"><span class="h-label">平均</span><span class="h-val">${r.avgSpeed}</span></div><div class="h-stat-box"><span class="h-label">里程</span><span class="h-val">${r.distance}</span></div></div><div style="margin-top:10px;"><button class="btn-link" style="margin-top:5px;background:#007aff;" onclick="showMap(${index})">🗺️ 查看地圖</button><button class="btn-link btn-gpx" onclick="downloadGpx(${index})">💾 下載 GPX</button></div>`;
+        item.innerHTML = `<div class="h-date">${r.date} - ${r.duration}</div><div class="h-stats"><div class="h-stat-box"><span class="h-label">極速</span><span class="h-val max">${r.maxSpeed}</span></div><div class="h-stat-box"><span class="h-label">平均</span><span class="h-val">${r.avgSpeed}</span></div><div class="h-stat-box"><span class="h-label">里程</span><span class="h-val">${r.distance}</span></div></div><div style="margin-top:10px;"><button class="btn-link" style="margin-top:5px;background:#007aff;" onclick="showMap(${index})">🗺️ 查看地圖</button><button class="btn-link btn-gpx" onclick="downloadGpx(${index})">💾 下載 GPX</button><button class="btn-link" style="background:#d32f2f; margin-left:10px;" onclick="deleteTrip(${index})">刪除</button></div>`;
         historyListEl.appendChild(item);
     });
 }
