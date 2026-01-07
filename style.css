@@ -352,7 +352,8 @@ body.warning .threshold-badge {
 #mini-map-overlay {
     position: fixed;
     display: none;
-    z-index: 5;
+    z-index: 30;
+    /* Moved to top layer */
     bottom: 140px;
     right: 10px;
     width: 140px;
@@ -389,13 +390,23 @@ body.maximized-mode #speed-display {
 
 /* 只在直向模式放大這些，橫向模式空間不夠 */
 @media (orientation: portrait) {
+
+    /* Center Map in Portrait */
+    #mini-map-overlay {
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        bottom: 160px;
+    }
+
     body.maximized-mode .limit-sign {
         transform: scale(1.3);
     }
 
     body.maximized-mode #mini-map-overlay {
-        transform: scale(1.25);
-        transform-origin: bottom right;
+        /* Combined centering + scaling */
+        transform: translateX(-50%) scale(1.25);
+        transform-origin: bottom center;
     }
 }
 
