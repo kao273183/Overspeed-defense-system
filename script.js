@@ -572,6 +572,10 @@ function updatePosition(position) {
         const dirs = ["北", "東北", "東", "東南", "南", "西南", "西", "西北"];
         const idx = Math.round(deg / 45) % 8;
         headingDisplay.textContent = `${dirs[idx]} (${Math.round(deg)}°)`;
+
+        // Rotate map for Heading Up mode
+        const mapEl = document.getElementById('realtime-map');
+        if (mapEl) mapEl.style.transform = `rotate(${-deg}deg)`;
     }
 
     currentMissingLat = lat; currentMissingLon = lon;
