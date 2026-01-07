@@ -630,12 +630,14 @@ function checkOverSpeed(currentSpeed) {
     const controls = document.querySelector('.primary-controls');
     if (isMonitoring && currentSpeed > 10) {
         if (controls) controls.classList.add('dock-hidden');
+        body.classList.add('maximized-mode');
     } else if (currentSpeed < 8) { // Hysteresis
         if (controls) controls.classList.remove('dock-hidden');
+        body.classList.remove('maximized-mode');
     }
 
     if (!isMonitoring) {
-        body.classList.remove('danger', 'warning');
+        body.classList.remove('danger', 'warning', 'maximized-mode');
         if (controls) controls.classList.remove('dock-hidden'); // Always show when stopped
         return;
     }

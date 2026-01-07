@@ -369,6 +369,36 @@ body.warning .threshold-badge {
     height: 100%;
 }
 
+/* Maximized Mode Transitions */
+#analog-gauge,
+#speed-display,
+.limit-sign,
+.info-area,
+#mini-map-overlay {
+    transition: all 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Maximized State */
+body.maximized-mode #analog-gauge {
+    transform: scale(1.25);
+}
+
+body.maximized-mode #speed-display {
+    transform: scale(1.4);
+}
+
+/* 只在直向模式放大這些，橫向模式空間不夠 */
+@media (orientation: portrait) {
+    body.maximized-mode .limit-sign {
+        transform: scale(1.3);
+    }
+
+    body.maximized-mode #mini-map-overlay {
+        transform: scale(1.25);
+        transform-origin: bottom right;
+    }
+}
+
 /* 底部控制區 */
 .primary-controls {
     width: 94%;
