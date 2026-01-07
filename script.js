@@ -63,6 +63,14 @@ let miniMapPolyline = null;
 let miniMapPath = [];
 
 let currentTheme = localStorage.getItem('speed_theme') || 'digital';
+let currentGaugeTheme = localStorage.getItem('gauge_theme') || 'default';
+
+const GAUGE_THEMES = {
+    'default': { name: '經典綠', mainColor: '#0f0', tickColor: '#fff', faceColor: 'transparent', needleColor: '#0f0', textColor: '#0f0' },
+    'sport': { name: '熱血紅', mainColor: '#f44336', tickColor: '#eee', faceColor: '#2b0000', needleColor: '#f44336', textColor: '#ffcdd2' },
+    'cyber': { name: '未來藍', mainColor: '#00e5ff', tickColor: '#00e5ff', faceColor: '#001014', needleColor: '#fff', textColor: '#00e5ff' },
+    'luxury': { name: '奢華金', mainColor: '#ffd700', tickColor: '#ffecb3', faceColor: '#1a1200', needleColor: '#ffd700', textColor: '#ffd700' }
+};
 
 const TOLERANCE = 38;
 const PRE_WARNING_BUFFER = 5;
@@ -74,8 +82,31 @@ window.addEventListener('load', () => {
     // if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
     setTheme(currentTheme);
+    initThemeSelector();
     drawGauge(0);
 });
+
+function initThemeSelector() {
+    const list = document.getElementById('gauge-theme-list');
+    if (!list) return;
+    list.innerHTML = '';
+    Object.keys(GAUGE_THEMES).forEach(key => {
+        const theme = GAUGE_THEMES[key];
+        const btn = document.createElement('button');
+        btn.textContent = theme.name;
+        btn.className = 'btn-set-speed'; // Reuse existing class for look
+        btn.style.flex = '1 0 40%';
+        btn.style.border = (currentGaugeTheme === key) ? `2px solid ${theme.mainColor}` : '1px solid #555';
+        btn.style.color = theme.mainColor;
+        btn.onclick = () => {
+            currentGaugeTheme = key;
+            localStorage.setItem('gauge_theme', key);
+            initThemeSelector(); // Re-render to update active state
+            drawGauge(parseInt(speedDisplay.textContent) || 0); // Redraw immediately
+        };
+        list.appendChild(btn);
+    });
+}
 
 function updateClock() {
     const now = new Date();
@@ -144,11 +175,25 @@ function drawGauge(speed) {
     const cy = h / 2;
     const r = w / 2 - 20;
 
+    const theme = GAUGE_THEMES[currentGaugeTheme] || GAUGE_THEMES['default'];
+
     ctx.clearRect(0, 0, w, h);
 
-    let mainColor = '#0f0';
-    if (body.classList.contains('danger')) mainColor = '#fff';
-    else if (body.classList.contains('warning')) mainColor = '#000';
+    // Background Face
+    if (theme.faceColor !== 'transparent') {
+        ctx.beginPath();
+        ctx.arc(cx, cy, r + 15, 0, 2 * Math.PI);
+        ctx.fillStyle = theme.faceColor;
+        ctx.fill();
+    }
+
+    let mainColor = theme.mainColor;
+    let needleColor = theme.needleColor;
+    let tickColor = theme.tickColor;
+
+    // Safety Override
+    if (body.classList.contains('danger')) { mainColor = '#fff'; needleColor = '#fff'; tickColor = '#fff'; }
+    else if (body.classList.contains('warning')) { mainColor = '#000'; needleColor = '#000'; tickColor = '#333'; }
 
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0.75 * Math.PI, 2.25 * Math.PI);
@@ -173,8 +218,9 @@ function drawGauge(speed) {
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
         ctx.lineWidth = 3;
-        ctx.strokeStyle = '#fff';
+        ctx.strokeStyle = tickColor;
         ctx.stroke();
+        ctx.fillStyle = tickColor;
         ctx.fillText(i, tx, ty);
     }
 
@@ -184,10 +230,10 @@ function drawGauge(speed) {
     ctx.moveTo(cx, cy);
     ctx.lineTo(cx + (r - 20) * Math.cos(needleAngle), cy + (r - 20) * Math.sin(needleAngle));
     ctx.lineWidth = 8;
-    ctx.strokeStyle = mainColor;
+    ctx.strokeStyle = needleColor;
     ctx.lineCap = 'round';
     ctx.shadowBlur = 10;
-    ctx.shadowColor = mainColor;
+    ctx.shadowColor = needleColor;
     ctx.stroke();
     ctx.shadowBlur = 0;
 
@@ -200,7 +246,7 @@ function drawGauge(speed) {
     ctx.font = 'bold 40px Arial';
     ctx.fillText(Math.round(speed), cx, cy + 50);
     ctx.font = '16px Arial';
-    ctx.fillStyle = '#888';
+    ctx.fillStyle = theme.textColor || '#888';
     ctx.fillText('km/h', cx, cy + 80);
 }
 

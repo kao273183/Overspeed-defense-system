@@ -1,25 +1,28 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>防扣牌預警系統</title>
-    
+
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     <link rel="apple-touch-icon" href="icon-512.png">
-    
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="style.css">
-    
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
+
 <body>
 
     <button id="menu-btn" onclick="toggleMenu()">☰</button>
     <button id="minimap-btn" onclick="toggleMiniMap()">🗺️ 地圖</button>
 
-    <div id="location-display">📍 定位中...</div> 
+    <div id="location-display">📍 定位中...</div>
     <div id="clock">--:--</div>
 
     <div class="extra-info">
@@ -36,7 +39,7 @@
             <span class="drawer-title">進階設定</span>
             <button class="close-btn" onclick="toggleMenu()">×</button>
         </div>
-        
+
         <div class="ad-container">
             <span class="ad-label">贊助商廣告 (申請後顯示)</span>
         </div>
@@ -53,6 +56,10 @@
                 <button class="drawer-btn" style="background:#444;" onclick="setTheme('digital')">🔢 數位</button>
                 <button class="drawer-btn" style="background:#444;" onclick="setTheme('analog')">⌚ 指針</button>
             </div>
+            <label style="margin-top:10px; font-size:0.9rem; color:#888;">指針主題</label>
+            <div id="gauge-theme-list" style="display:flex; flex-wrap:wrap; gap:8px;">
+                <!-- Themes will be injected here -->
+            </div>
         </div>
 
         <div class="input-group">
@@ -63,13 +70,17 @@
         </div>
         <div class="input-group">
             <label>OSM 自動速限</label>
-            <div style="display: flex; flex-direction: column; gap: 10px; background: #333; padding: 10px; border-radius: 8px;">
+            <div
+                style="display: flex; flex-direction: column; gap: 10px; background: #333; padding: 10px; border-radius: 8px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <input type="checkbox" id="auto-limit-check" checked style="width: 20px; height: 20px; accent-color: #2979ff;"> 
+                    <input type="checkbox" id="auto-limit-check" checked
+                        style="width: 20px; height: 20px; accent-color: #2979ff;">
                     <span style="font-size: 1rem; color: #fff;">啟用自動偵測</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 10px; border-top: 1px solid #555; padding-top: 10px;">
-                    <input type="checkbox" id="auto-log-check" style="width: 20px; height: 20px; accent-color: #ff3b30;"> 
+                <div
+                    style="display: flex; align-items: center; gap: 10px; border-top: 1px solid #555; padding-top: 10px;">
+                    <input type="checkbox" id="auto-log-check"
+                        style="width: 20px; height: 20px; accent-color: #ff3b30;">
                     <span style="font-size: 1rem; color: #ff9800;">🟥 自動紀錄缺漏</span>
                 </div>
             </div>
@@ -86,22 +97,27 @@
         <div class="modal-container">
             <div class="history-header">
                 <span id="modal-title">行車紀錄</span>
-                <button id="history-clear-btn" class="clear-btn" style="display:none; margin-left:auto; margin-right:10px;">🗑️ 一鍵刪除</button>
+                <button id="history-clear-btn" class="clear-btn"
+                    style="display:none; margin-left:auto; margin-right:10px;">🗑️ 一鍵刪除</button>
                 <button class="close-btn" onclick="closeHistory()" style="color:#fff;font-size:1.5rem;">×</button>
             </div>
-            <div class="ad-container" style="margin: 10px; width: auto;"><span class="ad-label">贊助商廣告 (申請後顯示)</span></div>
+            <div class="ad-container" style="margin: 10px; width: auto;"><span class="ad-label">贊助商廣告 (申請後顯示)</span>
+            </div>
             <div class="history-list" id="history-list"></div>
         </div>
     </div>
     <div id="upload-history-modal" class="modal-overlay">
         <div class="modal-container">
-            <div class="history-header"><span>OSM 上傳紀錄</span><button class="clear-btn" onclick="clearUploadHistory()">🗑️ 清除</button><button class="close-btn" onclick="closeUploadHistory()" style="color:#fff;font-size:1.5rem;">×</button></div>
+            <div class="history-header"><span>OSM 上傳紀錄</span><button class="clear-btn"
+                    onclick="clearUploadHistory()">🗑️ 清除</button><button class="close-btn"
+                    onclick="closeUploadHistory()" style="color:#fff;font-size:1.5rem;">×</button></div>
             <div class="history-list" id="upload-history-list"></div>
         </div>
     </div>
     <div id="help-modal" class="modal-overlay">
         <div class="modal-container">
-            <div class="history-header"><span>關於本系統</span><button class="close-btn" onclick="closeHelp()" style="color:#fff;font-size:1.5rem;">×</button></div>
+            <div class="history-header"><span>關於本系統</span><button class="close-btn" onclick="closeHelp()"
+                    style="color:#fff;font-size:1.5rem;">×</button></div>
             <div class="help-content">
                 <h3>🚀 如何開始？</h3>
                 <ul>
@@ -144,7 +160,9 @@
     </div>
     <div id="map-modal" class="modal-overlay">
         <div class="modal-container" style="height: 90%; max-width: 800px;">
-            <div id="map-container"><button class="back-btn" onclick="closeMap()">⬅️ 返回列表</button><div id="trip-map"></div></div>
+            <div id="map-container"><button class="back-btn" onclick="closeMap()">⬅️ 返回列表</button>
+                <div id="trip-map"></div>
+            </div>
         </div>
     </div>
 
@@ -154,10 +172,10 @@
                 <div id="realtime-map"></div>
             </div>
 
-            <div id="speed-display">0</div> 
-            
+            <div id="speed-display">0</div>
+
             <canvas id="analog-gauge" width="400" height="400"></canvas>
-            
+
             <div class="info-area">
                 <div class="limit-container">
                     <div id="visual-limit" class="limit-sign unknown" onclick="editCurrentLimit()">?</div>
@@ -177,9 +195,9 @@
                     <button class="preset-btn" onclick="setLimit(50)">50</button>
                 </div>
                 <div class="adjust-row">
-                    <button class="adjust-btn" id="btn-minus">-10</button> 
+                    <button class="adjust-btn" id="btn-minus">-10</button>
                     <input type="number" id="limit-input" value="50">
-                    <button class="adjust-btn" id="btn-plus">+10</button> 
+                    <button class="adjust-btn" id="btn-plus">+10</button>
                 </div>
             </div>
             <button id="toggle-btn">🚀 啟動偵測</button>
@@ -188,4 +206,5 @@
 
     <script src="script.js"></script>
 </body>
+
 </html>
