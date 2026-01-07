@@ -8,9 +8,9 @@ const alarmThresholdText = document.getElementById('alarm-threshold-text');
 const reportBtn = document.getElementById('report-btn');
 // [修正] 指向側邊選單裡的按鈕 ID
 const hudBtn = document.getElementById('drawer-hud-btn');
-const minimapBtn = document.getElementById('minimap-btn'); 
-const altitudeDisplay = document.getElementById('altitude-display'); 
-const headingDisplay = document.getElementById('heading-display'); 
+const minimapBtn = document.getElementById('minimap-btn');
+const altitudeDisplay = document.getElementById('altitude-display');
+const headingDisplay = document.getElementById('heading-display');
 
 const voiceTextInput = document.getElementById('voice-text');
 const toggleBtn = document.getElementById('toggle-btn');
@@ -20,7 +20,7 @@ const btnPlus = document.getElementById('btn-plus');
 const clockEl = document.getElementById('clock');
 const statusDiv = document.getElementById('status');
 const autoLimitCheck = document.getElementById('auto-limit-check');
-const autoLogCheck = document.getElementById('auto-log-check'); 
+const autoLogCheck = document.getElementById('auto-log-check');
 const drawer = document.getElementById('settings-drawer');
 const overlay = document.getElementById('overlay');
 const body = document.body;
@@ -29,7 +29,7 @@ const historyModal = document.getElementById('history-modal');
 const historyListEl = document.getElementById('history-list');
 const modalTitle = document.getElementById('modal-title');
 const mapModal = document.getElementById('map-modal');
-const helpModal = document.getElementById('help-modal'); 
+const helpModal = document.getElementById('help-modal');
 const uploadHistoryModal = document.getElementById('upload-history-modal');
 const uploadHistoryList = document.getElementById('upload-history-list');
 
@@ -40,16 +40,16 @@ const pipVideo = document.getElementById('pip-video');
 let watchId = null;
 let wakeLock = null;
 let lastSpeakTime = 0;
-let lastBeepTime = 0; 
-let isMonitoring = false; 
+let lastBeepTime = 0;
+let isMonitoring = false;
 let lastOsmCheckTime = 0;
-let lastAddressCheckTime = 0; 
+let lastAddressCheckTime = 0;
 let isFirstFix = true;
 
 let tripStartTime = null;
 let tripMaxSpeed = 0;
-let tripDistance = 0; 
-let currentTripPath = []; 
+let tripDistance = 0;
+let currentTripPath = [];
 let lastLat = null;
 let lastLon = null;
 let mapInstance = null;
@@ -62,17 +62,17 @@ let miniMapMarker = null;
 let miniMapPolyline = null;
 let miniMapPath = [];
 
-let currentTheme = localStorage.getItem('speed_theme') || 'digital'; 
+let currentTheme = localStorage.getItem('speed_theme') || 'digital';
 
-const TOLERANCE = 38; 
-const PRE_WARNING_BUFFER = 5; 
+const TOLERANCE = 38;
+const PRE_WARNING_BUFFER = 5;
 const synth = window.speechSynthesis;
 
 window.addEventListener('load', () => {
     if (!localStorage.getItem('hasSeenHelp')) { showHelp(); localStorage.setItem('hasSeenHelp', 'true'); }
     // PWA disabled for dev
     // if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
-    
+
     setTheme(currentTheme);
     drawGauge(0);
 });
@@ -84,11 +84,11 @@ function updateClock() {
     clockEl.textContent = `${hours}:${minutes}`;
 }
 setInterval(updateClock, 1000);
-updateClock(); 
+updateClock();
 
 const silentAudio = new Audio();
 silentAudio.src = "data:audio/mp3;base64,SUQzBAAAAAABAFRYWFQAAAASAAADbWFqb3JfYnJhbmQAbXA0MgBUWFhUAAAAEQAAA21pbm9yX3ZlcnNpb24AMABUWFhUAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzb21tcDQyAFRTU0UAAAAPAAADTGF2ZjU3LjU2LjEwMAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWgAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
-silentAudio.loop = true; silentAudio.volume = 0.01; 
+silentAudio.loop = true; silentAudio.volume = 0.01;
 
 let beepAudio = new Audio('./sound.mp3');
 function playCustomSound() {
@@ -98,41 +98,41 @@ function playCustomSound() {
 
 testTtsBtn.addEventListener('click', () => { playCustomSound(); setTimeout(() => { speak(voiceTextInput.value || "測試語音"); }, 1000); });
 
-window.toggleHud = function() {
+window.toggleHud = function () {
     body.classList.toggle('hud-mode');
-    if(drawer.classList.contains('open')) toggleMenu(); 
+    if (drawer.classList.contains('open')) toggleMenu();
 };
 
-window.toggleMiniMap = function() {
+window.toggleMiniMap = function () {
     const el = document.getElementById('mini-map-overlay');
-    const dashboard = document.querySelector('.dashboard'); 
-    
+    const dashboard = document.querySelector('.dashboard');
+
     if (el.style.display === 'block') {
         el.style.display = 'none';
         minimapBtn.style.color = '#fff';
-        dashboard.classList.remove('map-active'); 
+        dashboard.classList.remove('map-active');
     } else {
         el.style.display = 'block';
         minimapBtn.style.color = '#00e676';
-        dashboard.classList.add('map-active'); 
-        
+        dashboard.classList.add('map-active');
+
         if (!miniMap) initMiniMap();
-        else { 
-            setTimeout(() => { miniMap.invalidateSize(); }, 100); 
+        else {
+            setTimeout(() => { miniMap.invalidateSize(); }, 100);
         }
     }
 };
 
-window.setTheme = function(theme) {
+window.setTheme = function (theme) {
     currentTheme = theme;
     localStorage.setItem('speed_theme', theme);
-    
+
     if (theme === 'analog') {
         body.classList.add('theme-analog');
     } else {
         body.classList.remove('theme-analog');
     }
-    if(drawer.classList.contains('open')) toggleMenu(); 
+    if (drawer.classList.contains('open')) toggleMenu();
 };
 
 function drawGauge(speed) {
@@ -146,9 +146,9 @@ function drawGauge(speed) {
 
     ctx.clearRect(0, 0, w, h);
 
-    let mainColor = '#0f0'; 
-    if (body.classList.contains('danger')) mainColor = '#fff'; 
-    else if (body.classList.contains('warning')) mainColor = '#000'; 
+    let mainColor = '#0f0';
+    if (body.classList.contains('danger')) mainColor = '#fff';
+    else if (body.classList.contains('warning')) mainColor = '#000';
 
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0.75 * Math.PI, 2.25 * Math.PI);
@@ -160,7 +160,7 @@ function drawGauge(speed) {
     ctx.font = 'bold 20px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    
+
     for (let i = 0; i <= 240; i += 20) {
         const angle = 0.75 * Math.PI + (i / 240) * (1.5 * Math.PI);
         const tx = cx + (r - 35) * Math.cos(angle);
@@ -184,12 +184,12 @@ function drawGauge(speed) {
     ctx.moveTo(cx, cy);
     ctx.lineTo(cx + (r - 20) * Math.cos(needleAngle), cy + (r - 20) * Math.sin(needleAngle));
     ctx.lineWidth = 8;
-    ctx.strokeStyle = mainColor; 
+    ctx.strokeStyle = mainColor;
     ctx.lineCap = 'round';
     ctx.shadowBlur = 10;
     ctx.shadowColor = mainColor;
     ctx.stroke();
-    ctx.shadowBlur = 0; 
+    ctx.shadowBlur = 0;
 
     ctx.beginPath();
     ctx.arc(cx, cy, 10, 0, 2 * Math.PI);
@@ -205,7 +205,7 @@ function drawGauge(speed) {
 }
 
 function initMiniMap() {
-    miniMap = L.map('realtime-map', { zoomControl: false, attributionControl: false }).setView([25.0330, 121.5654], 18); 
+    miniMap = L.map('realtime-map', { zoomControl: false, attributionControl: false }).setView([25.0330, 121.5654], 18);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(miniMap);
     if (currentMissingLat && currentMissingLon) { updateMiniMap(currentMissingLat, currentMissingLon); }
 }
@@ -213,25 +213,25 @@ function initMiniMap() {
 function updateMiniMap(lat, lon) {
     if (!miniMap) return;
     const latlng = [lat, lon];
-    if (!miniMapMarker) { miniMapMarker = L.circleMarker(latlng, { radius: 8, fillColor: '#2979ff', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(miniMap); } 
+    if (!miniMapMarker) { miniMapMarker = L.circleMarker(latlng, { radius: 8, fillColor: '#2979ff', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(miniMap); }
     else { miniMapMarker.setLatLng(latlng); }
     miniMapPath.push(latlng);
-    if (miniMapPath.length > 500) miniMapPath.shift(); 
-    if (!miniMapPolyline) { miniMapPolyline = L.polyline(miniMapPath, { color: '#00e676', weight: 3 }).addTo(miniMap); } 
+    if (miniMapPath.length > 500) miniMapPath.shift();
+    if (!miniMapPolyline) { miniMapPolyline = L.polyline(miniMapPath, { color: '#00e676', weight: 3 }).addTo(miniMap); }
     else { miniMapPolyline.setLatLngs(miniMapPath); }
-    miniMap.setView(latlng, 18); miniMap.invalidateSize(); 
+    miniMap.setView(latlng, 18); miniMap.invalidateSize();
 }
 
-window.toggleMenu = function() {
+window.toggleMenu = function () {
     drawer.classList.toggle('open');
     if (drawer.classList.contains('open')) overlay.style.display = 'block';
     else overlay.style.display = 'none';
 };
 
-window.showHelp = function() { if(drawer.classList.contains('open')) toggleMenu(); helpModal.classList.add('show'); }
-window.closeHelp = function() { helpModal.classList.remove('show'); }
+window.showHelp = function () { if (drawer.classList.contains('open')) toggleMenu(); helpModal.classList.add('show'); }
+window.closeHelp = function () { helpModal.classList.remove('show'); }
 
-window.editCurrentLimit = function() {
+window.editCurrentLimit = function () {
     if (!currentMissingLat || !currentMissingLon) { alert("尚未定位，無法修改"); return; }
     let defaultVal = limitInput.value || "50";
     const input = prompt("修正此路段速限為：", defaultVal);
@@ -245,7 +245,7 @@ window.editCurrentLimit = function() {
     }
 };
 
-window.quickMarkMissing = function() {
+window.quickMarkMissing = function () {
     if (!currentMissingLat || !currentMissingLon) { alert("尚未定位，無法標記"); return; }
     saveCustomLimit(currentMissingLat, currentMissingLon, null);
     reportBtn.textContent = "✅ 已標記"; reportBtn.style.background = "#4caf50";
@@ -255,14 +255,57 @@ window.quickMarkMissing = function() {
 
 function saveCustomLimit(lat, lon, limit) {
     let reports = JSON.parse(localStorage.getItem('osm_reports') || "[]");
-    const index = reports.findIndex(r => Math.abs(r.lat - lat) < 0.0002 && Math.abs(r.lon - lon) < 0.0002);
-    if (index !== -1) {
-        if (limit !== undefined) { reports[index].limit = limit; reports[index].date = new Date().toLocaleString('zh-TW'); }
-    } else {
-        const newReport = { lat: lat, lon: lon, limit: limit, date: new Date().toLocaleString('zh-TW'), address: locationDisplay.textContent.replace('📍 ', '') };
-        reports.push(newReport);
+
+    // 取得當前地址
+    const currentAddress = locationDisplay.textContent.replace('📍 ', '');
+    const currentRoadName = currentAddress.split(' ').pop(); // 取出路名 (如 "安民街")
+
+    let foundIndex = -1;
+
+    // 搜尋重複邏輯
+    for (let i = 0; i < reports.length; i++) {
+        const r = reports[i];
+        const dist = getDistanceFromLatLonInKm(r.lat, r.lon, lat, lon);
+
+        let isDuplicate = false;
+
+        // 條件 1: 距離極近 (< 200m)，無論路名
+        if (dist < 0.2) {
+            isDuplicate = true;
+        }
+        // 條件 2: 同一條路名 且 距離 < 1km
+        else if (currentRoadName && r.address && r.address.includes(currentRoadName) && dist < 1.0) {
+            isDuplicate = true;
+        }
+
+        if (isDuplicate) {
+            foundIndex = i;
+            break;
+        }
     }
-    if (reports.length > 100) reports.shift();
+
+    if (foundIndex !== -1) {
+        // [更新] 找到重複，更新位置與時間
+        if (limit !== undefined) {
+            reports[foundIndex].limit = limit;
+        }
+        // 更新為最新位置與時間
+        reports[foundIndex].lat = lat;
+        reports[foundIndex].lon = lon;
+        reports[foundIndex].date = new Date().toLocaleString('zh-TW');
+        reports[foundIndex].address = currentAddress;
+
+        // 將更新的項目移到最前面
+        const updatedReport = reports.splice(foundIndex, 1)[0];
+        reports.unshift(updatedReport);
+
+    } else {
+        // [新增] 無重複
+        const newReport = { lat: lat, lon: lon, limit: limit, date: new Date().toLocaleString('zh-TW'), address: currentAddress };
+        reports.unshift(newReport); // 直接加到最前面
+    }
+
+    if (reports.length > 100) reports = reports.slice(0, 100); // 修正長度限制邏輯
     localStorage.setItem('osm_reports', JSON.stringify(reports));
 }
 
@@ -271,14 +314,14 @@ function findCustomLimit(lat, lon) {
     for (let r of reports) {
         if (Math.abs(r.lat - lat) < 0.0005 && Math.abs(r.lon - lon) < 0.0005) return r.limit;
     }
-    return undefined; 
+    return undefined;
 }
 
-window.updateReportSpeed = function(index, speed) {
+window.updateReportSpeed = function (index, speed) {
     let reports = JSON.parse(localStorage.getItem('osm_reports') || "[]");
     reports[index].limit = speed;
     localStorage.setItem('osm_reports', JSON.stringify(reports));
-    showOsmReports(); 
+    showOsmReports();
 };
 
 function addToUploadHistory(report, noteId) {
@@ -288,25 +331,25 @@ function addToUploadHistory(report, noteId) {
     localStorage.setItem('osm_uploaded_history', JSON.stringify(history));
 }
 
-window.uploadToOsm = function(index) {
+window.uploadToOsm = function (index) {
     let reports = JSON.parse(localStorage.getItem('osm_reports') || "[]");
     const r = reports[index];
     if (!r || !r.limit) { alert("請先設定速限後再上傳"); return; }
     const btn = document.getElementById(`upload-btn-${index}`);
-    if(btn) { btn.disabled = true; btn.textContent = "上傳中..."; }
+    if (btn) { btn.disabled = true; btn.textContent = "上傳中..."; }
     const text = `User reported maxspeed: ${r.limit} km/h (via SpeedTrap WebApp)`;
     const url = `https://api.openstreetmap.org/api/0.6/notes.json?lat=${r.lat}&lon=${r.lon}&text=${encodeURIComponent(text)}`;
     fetch(url, { method: 'POST' }).then(response => response.json()).then(data => {
         const noteId = data.properties.id; const noteUrl = `https://www.openstreetmap.org/note/${noteId}`;
         addToUploadHistory(r, noteId); deleteReport(index);
-        if(confirm(`✅ 筆記上傳成功！(ID: ${noteId})\n已移至「上傳紀錄」。\n是否要前往 OSM 查看？`)) { window.open(noteUrl, '_blank'); }
+        if (confirm(`✅ 筆記上傳成功！(ID: ${noteId})\n已移至「上傳紀錄」。\n是否要前往 OSM 查看？`)) { window.open(noteUrl, '_blank'); }
     }).catch(err => {
-        alert("❌ 上傳失敗\n請檢查網路或稍後再試。"); if(btn) { btn.disabled = false; btn.textContent = "☁️ 上傳 OSM 筆記"; } console.error(err);
+        alert("❌ 上傳失敗\n請檢查網路或稍後再試。"); if (btn) { btn.disabled = false; btn.textContent = "☁️ 上傳 OSM 筆記"; } console.error(err);
     });
 };
 
-window.showUploadHistory = function() {
-    if(drawer.classList.contains('open')) toggleMenu();
+window.showUploadHistory = function () {
+    if (drawer.classList.contains('open')) toggleMenu();
     const history = JSON.parse(localStorage.getItem('osm_uploaded_history') || "[]");
     uploadHistoryList.innerHTML = "";
     if (history.length === 0) { uploadHistoryList.innerHTML = `<div class="empty-msg">尚無上傳紀錄</div>`; } else {
@@ -319,12 +362,17 @@ window.showUploadHistory = function() {
     }
     uploadHistoryModal.classList.add('show');
 }
-window.closeUploadHistory = function() { uploadHistoryModal.classList.remove('show'); }
-window.clearUploadHistory = function() { if(confirm("確定清除所有上傳紀錄嗎？")) { localStorage.removeItem('osm_uploaded_history'); showUploadHistory(); } }
+window.closeUploadHistory = function () { uploadHistoryModal.classList.remove('show'); }
+window.clearUploadHistory = function () { if (confirm("確定清除所有上傳紀錄嗎？")) { localStorage.removeItem('osm_uploaded_history'); showUploadHistory(); } }
 
-window.showOsmReports = function() {
+window.showOsmReports = function () {
     toggleMenu(); const reports = JSON.parse(localStorage.getItem('osm_reports') || "[]");
     modalTitle.textContent = "缺漏標記列表"; historyListEl.innerHTML = "";
+    const clearBtn = document.getElementById('history-clear-btn');
+    if (clearBtn) {
+        clearBtn.style.display = 'inline-block';
+        clearBtn.onclick = window.clearAllReports;
+    }
     if (reports.length === 0) { historyListEl.innerHTML = `<div class="empty-msg">尚無標記紀錄</div>`; } else {
         reports.forEach((r, idx) => {
             const editLink = `https://www.openstreetmap.org/edit?editor=id#map=19/${r.lat}/${r.lon}`;
@@ -344,15 +392,28 @@ window.showOsmReports = function() {
     historyModal.classList.add('show');
 }
 
-window.deleteReport = function(index) { let reports = JSON.parse(localStorage.getItem('osm_reports') || "[]"); reports.splice(index, 1); localStorage.setItem('osm_reports', JSON.stringify(reports)); showOsmReports(); }
+window.deleteReport = function (index) { let reports = JSON.parse(localStorage.getItem('osm_reports') || "[]"); reports.splice(index, 1); localStorage.setItem('osm_reports', JSON.stringify(reports)); showOsmReports(); }
 
-window.showHistory = function() { toggleMenu(); renderHistory(); historyModal.classList.add('show'); };
-window.closeHistory = function() { historyModal.classList.remove('show'); };
-window.clearHistory = function() { if(confirm('確定要刪除所有紀錄嗎？')) { localStorage.removeItem('trip_records'); renderHistory(); } };
+window.clearAllReports = function () {
+    if (confirm("⚠️ 確定要刪除所有「缺漏標記」嗎？\n此動作無法復原！")) {
+        localStorage.removeItem('osm_reports');
+        showOsmReports();
+    }
+};
 
-window.downloadGpx = function(index) {
+window.showHistory = function () {
+    toggleMenu();
+    renderHistory();
+    const clearBtn = document.getElementById('history-clear-btn');
+    if (clearBtn) clearBtn.style.display = 'none';
+    historyModal.classList.add('show');
+};
+window.closeHistory = function () { historyModal.classList.remove('show'); };
+window.clearHistory = function () { if (confirm('確定要刪除所有紀錄嗎？')) { localStorage.removeItem('trip_records'); renderHistory(); } };
+
+window.downloadGpx = function (index) {
     const records = JSON.parse(localStorage.getItem('trip_records') || "[]"); const record = records[index];
-    if(!record || !record.path || record.path.length === 0) { alert("無軌跡資料"); return; }
+    if (!record || !record.path || record.path.length === 0) { alert("無軌跡資料"); return; }
     let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="SpeedTrapWebApp"><trk><name>Trip on ${record.date}</name><trkseg>`;
     record.path.forEach(pt => { gpx += `\n<trkpt lat="${pt[0]}" lon="${pt[1]}"></trkpt>`; });
     gpx += `\n</trkseg></trk></gpx>`;
@@ -361,18 +422,18 @@ window.downloadGpx = function(index) {
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
 };
 
-window.showMap = function(index) {
+window.showMap = function (index) {
     const records = JSON.parse(localStorage.getItem('trip_records') || "[]"); const record = records[index];
-    if(!record || !record.path || record.path.length === 0) { alert("無軌跡資料"); return; }
+    if (!record || !record.path || record.path.length === 0) { alert("無軌跡資料"); return; }
     mapModal.classList.add('show');
     if (!mapInstance) { mapInstance = L.map('trip-map'); L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 19 }).addTo(mapInstance); }
     if (polylineLayer) mapInstance.removeLayer(polylineLayer);
     setTimeout(() => { mapInstance.invalidateSize(); polylineLayer = L.polyline(record.path, { color: '#0f0', weight: 4, opacity: 0.8 }).addTo(mapInstance); mapInstance.fitBounds(polylineLayer.getBounds(), { padding: [50, 50] }); }, 100);
 };
-window.closeMap = function() { mapModal.classList.remove('show'); };
+window.closeMap = function () { mapModal.classList.remove('show'); };
 
 function saveTrip() {
-    if (!tripStartTime) return; const now = new Date(); const durationMs = now - tripStartTime; if (durationMs < 10000 && tripDistance < 0.1) return; 
+    if (!tripStartTime) return; const now = new Date(); const durationMs = now - tripStartTime; if (durationMs < 10000 && tripDistance < 0.1) return;
     const hours = durationMs / 1000 / 3600; const avgSpeed = hours > 0 ? (tripDistance / hours) : 0;
     const record = { date: tripStartTime.toLocaleString('zh-TW'), duration: (durationMs / 1000 / 60).toFixed(1) + " 分", distance: tripDistance.toFixed(1) + " km", maxSpeed: Math.round(tripMaxSpeed) + " km/h", avgSpeed: Math.round(avgSpeed) + " km/h", path: currentTripPath };
     let records = JSON.parse(localStorage.getItem('trip_records') || "[]"); records.unshift(record); if (records.length > 20) records.pop();
@@ -389,27 +450,27 @@ function renderHistory() {
     });
 }
 
-window.setLimit = function(val) {
+window.setLimit = function (val) {
     limitInput.value = val;
     let hasLocal = false;
     if (currentMissingLat && currentMissingLon) { const saved = findCustomLimit(currentMissingLat, currentMissingLon); if (saved !== undefined && saved !== null) { hasLocal = true; } }
     updateVisualSign(val, false, false, false, hasLocal); updateThresholdDisplay(); updatePiP(0, val);
 };
-btnMinus.addEventListener('click', () => setLimit(Math.max(0, (parseInt(limitInput.value)||0) - 10)));
-btnPlus.addEventListener('click', () => setLimit((parseInt(limitInput.value)||0) + 10));
+btnMinus.addEventListener('click', () => setLimit(Math.max(0, (parseInt(limitInput.value) || 0) - 10)));
+btnPlus.addEventListener('click', () => setLimit((parseInt(limitInput.value) || 0) + 10));
 
-toggleBtn.addEventListener('click', () => { 
-    silentAudio.play().catch(()=>{}); 
+toggleBtn.addEventListener('click', () => {
+    silentAudio.play().catch(() => { });
     // 手機語音修復：強制解鎖 TTS
     speak(" ");
-    if (!isMonitoring) startActiveMonitoring(); 
-    else stopActiveMonitoring(); 
+    if (!isMonitoring) startActiveMonitoring();
+    else stopActiveMonitoring();
 });
 
 limitInput.addEventListener('input', () => { updateVisualSign(limitInput.value, false); updateThresholdDisplay(); updatePiP(0, limitInput.value); });
 
 function updateThresholdDisplay() { const base = parseInt(limitInput.value) || 0; alarmThresholdText.textContent = base + TOLERANCE; }
-async function requestWakeLock() { try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
+async function requestWakeLock() { try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) { } }
 document.addEventListener('visibilitychange', async () => { if (wakeLock !== null && document.visibilityState === 'visible') await requestWakeLock(); });
 
 function initGPS() {
@@ -421,8 +482,8 @@ function initGPS() {
 initGPS();
 
 async function startActiveMonitoring() {
-    silentAudio.play().catch(()=>{}); playCustomSound(); 
-    setTimeout(() => { speak("偵測開始"); }, 800); 
+    silentAudio.play().catch(() => { }); playCustomSound();
+    setTimeout(() => { speak("偵測開始"); }, 800);
     await requestWakeLock();
     tripStartTime = new Date(); tripMaxSpeed = 0; tripDistance = 0; currentTripPath = []; lastLat = null; lastLon = null;
     isMonitoring = true; toggleBtn.textContent = "🛑 停止偵測"; toggleBtn.classList.add('active'); statusDiv.textContent = "⚠️ 監控中";
@@ -435,16 +496,16 @@ function stopActiveMonitoring() {
 }
 
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
-    const R = 6371; const dLat = (lat2-lat1)*(Math.PI/180); const dLon = (lon2-lon1)*(Math.PI/180);
-    const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*(Math.PI/180))*Math.cos(lat2*(Math.PI/180))*Math.sin(dLon/2)*Math.sin(dLon/2);
-    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+    const R = 6371; const dLat = (lat2 - lat1) * (Math.PI / 180); const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
 function updatePosition(position) {
     const lat = position.coords.latitude; const lon = position.coords.longitude;
     let speedMps = position.coords.speed; if (speedMps === null || speedMps < 0) speedMps = 0;
     const speedKmh = speedMps * 3.6;
-    
+
     if (position.coords.altitude) altitudeDisplay.textContent = `Alt: ${Math.round(position.coords.altitude)}m`;
     if (position.coords.heading) {
         const deg = position.coords.heading;
@@ -465,130 +526,130 @@ function updatePosition(position) {
             const dist = getDistanceFromLatLonInKm(lastLat, lastLon, lat, lon);
             if (speedKmh > 2 && dist > 0.0005 && dist < 0.2) tripDistance += dist;
             if (dist > 0.01) currentTripPath.push([lat, lon]);
-                } else currentTripPath.push([lat, lon]);
-                if (speedKmh > tripMaxSpeed) tripMaxSpeed = speedKmh;
-                lastLat = lat; lastLon = lon;
-            }
+        } else currentTripPath.push([lat, lon]);
+        if (speedKmh > tripMaxSpeed) tripMaxSpeed = speedKmh;
+        lastLat = lat; lastLon = lon;
+    }
 
-            speedDisplay.innerHTML = `${Math.round(speedKmh)}`;
-            if (currentTheme === 'analog') drawGauge(speedKmh); // 更新指針
+    speedDisplay.innerHTML = `${Math.round(speedKmh)}`;
+    if (currentTheme === 'analog') drawGauge(speedKmh); // 更新指針
 
-            const now = Date.now();
-            const overpassServers = ["https://overpass-api.de/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
+    const now = Date.now();
+    const overpassServers = ["https://overpass-api.de/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
 
-            if (autoLimitCheck.checked && ( (now - lastOsmCheckTime > 15000 && speedKmh > 10) || isFirstFix ) ) {
-                const savedLimit = findCustomLimit(lat, lon);
-                if (savedLimit !== undefined) {
-                    if (savedLimit !== null) { limitInput.value = savedLimit; updateVisualSign(savedLimit, false, true); updateThresholdDisplay(); } else { updateVisualSign(null, true); }
-                } else {
-                    (async () => {
-                        let success = false;
-                        const query = `[out:json];way[maxspeed](around:20,${lat},${lon});out tags;`;
-                        for (const server of overpassServers) {
-                            if(success) break;
-                            try {
-                                const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 3000);
-                                const response = await fetch(`${server}?data=${encodeURIComponent(query)}`, { signal: controller.signal });
-                                clearTimeout(timeoutId); if (!response.ok) throw new Error("Server busy");
-                                const data = await response.json();
-                                if (data.elements && data.elements.length > 0) {
-                                    let maxspeed = data.elements[0].tags.maxspeed; let limitNumber = parseInt(maxspeed);
-                                    if (!isNaN(limitNumber)) { limitInput.value = limitNumber; updateVisualSign(limitNumber, true); updateThresholdDisplay(); updatePiP(0, limitNumber); success = true; }
-                                }
-                            } catch (e) { console.warn("Switching server..."); }
+    if (autoLimitCheck.checked && ((now - lastOsmCheckTime > 15000 && speedKmh > 10) || isFirstFix)) {
+        const savedLimit = findCustomLimit(lat, lon);
+        if (savedLimit !== undefined) {
+            if (savedLimit !== null) { limitInput.value = savedLimit; updateVisualSign(savedLimit, false, true); updateThresholdDisplay(); } else { updateVisualSign(null, true); }
+        } else {
+            (async () => {
+                let success = false;
+                const query = `[out:json];way[maxspeed](around:20,${lat},${lon});out tags;`;
+                for (const server of overpassServers) {
+                    if (success) break;
+                    try {
+                        const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 3000);
+                        const response = await fetch(`${server}?data=${encodeURIComponent(query)}`, { signal: controller.signal });
+                        clearTimeout(timeoutId); if (!response.ok) throw new Error("Server busy");
+                        const data = await response.json();
+                        if (data.elements && data.elements.length > 0) {
+                            let maxspeed = data.elements[0].tags.maxspeed; let limitNumber = parseInt(maxspeed);
+                            if (!isNaN(limitNumber)) { limitInput.value = limitNumber; updateVisualSign(limitNumber, true); updateThresholdDisplay(); updatePiP(0, limitNumber); success = true; }
                         }
-                        if (!success) setDefaultLimit(lat, lon);
-                    })();
+                    } catch (e) { console.warn("Switching server..."); }
                 }
-                lastOsmCheckTime = now; isFirstFix = false; 
-            }
-            if (now - lastAddressCheckTime > 15000) { fetchAddress(lat, lon); lastAddressCheckTime = now; }
-            checkOverSpeed(speedKmh); updatePiP(speedKmh, limitInput.value);
+                if (!success) setDefaultLimit(lat, lon);
+            })();
         }
+        lastOsmCheckTime = now; isFirstFix = false;
+    }
+    if (now - lastAddressCheckTime > 15000) { fetchAddress(lat, lon); lastAddressCheckTime = now; }
+    checkOverSpeed(speedKmh); updatePiP(speedKmh, limitInput.value);
+}
 
-        function checkOverSpeed(currentSpeed) {
-            if (!isMonitoring) { body.classList.remove('danger', 'warning'); return; }
-            const baseLimit = parseFloat(limitInput.value);
-            const alarmTrigger = baseLimit + TOLERANCE; 
-            const preWarningStart = alarmTrigger - PRE_WARNING_BUFFER; 
-            const now = Date.now();
-            if (currentSpeed > alarmTrigger) {
-                body.classList.remove('warning'); body.classList.add('danger');
-                if (now - lastSpeakTime > 3000) { playCustomSound(); setTimeout(() => speak(voiceTextInput.value), 1000); lastSpeakTime = now; }
-            } else if (currentSpeed > preWarningStart) {
-                body.classList.remove('danger'); body.classList.add('warning');
-                if (now - lastBeepTime > 1000) { playCustomSound(); lastBeepTime = now; }
-            } else { body.classList.remove('danger', 'warning'); }
+function checkOverSpeed(currentSpeed) {
+    if (!isMonitoring) { body.classList.remove('danger', 'warning'); return; }
+    const baseLimit = parseFloat(limitInput.value);
+    const alarmTrigger = baseLimit + TOLERANCE;
+    const preWarningStart = alarmTrigger - PRE_WARNING_BUFFER;
+    const now = Date.now();
+    if (currentSpeed > alarmTrigger) {
+        body.classList.remove('warning'); body.classList.add('danger');
+        if (now - lastSpeakTime > 3000) { playCustomSound(); setTimeout(() => speak(voiceTextInput.value), 1000); lastSpeakTime = now; }
+    } else if (currentSpeed > preWarningStart) {
+        body.classList.remove('danger'); body.classList.add('warning');
+        if (now - lastBeepTime > 1000) { playCustomSound(); lastBeepTime = now; }
+    } else { body.classList.remove('danger', 'warning'); }
+}
+
+async function fetchAddress(lat, lon) {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=zh-TW`;
+    try {
+        const response = await fetch(url); const data = await response.json();
+        if (data && data.address) {
+            const road = data.address.road || ""; const suburb = data.address.suburb || data.address.city_district || ""; const city = data.address.city || "";
+            locationDisplay.textContent = road ? `${suburb} ${road}` : `${city} ${suburb}`;
         }
+    } catch (err) { }
+}
 
-        async function fetchAddress(lat, lon) {
-            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=zh-TW`;
-            try {
-                const response = await fetch(url); const data = await response.json();
-                if (data && data.address) {
-                    const road = data.address.road || ""; const suburb = data.address.suburb || data.address.city_district || ""; const city = data.address.city || "";
-                    locationDisplay.textContent = road ? `${suburb} ${road}` : `${city} ${suburb}`;
-                }
-            } catch (err) {}
-        }
+function setDefaultLimit(lat, lon) {
+    const defaultVal = 50; limitInput.value = defaultVal; updateVisualSign(defaultVal, true, false, true);
+    updateThresholdDisplay(); updatePiP(0, defaultVal);
+    if (autoLogCheck.checked && lat && lon) { saveCustomLimit(lat, lon, null); }
+}
 
-        function setDefaultLimit(lat, lon) {
-            const defaultVal = 50; limitInput.value = defaultVal; updateVisualSign(defaultVal, true, false, true); 
-            updateThresholdDisplay(); updatePiP(0, defaultVal);
-            if (autoLogCheck.checked && lat && lon) { saveCustomLimit(lat, lon, null); }
-        }
-
-        function updateVisualSign(val, isAuto, isCustom = false, isDefault = false, hasLocalOverride = false) {
-            if (val && val > 0) {
-                visualLimit.textContent = val; visualLimit.classList.remove('unknown');
-                if (isDefault) {
-                    limitSourceText.innerHTML = "⚠️ 預設 (無資)"; limitSourceText.style.color = "#ff9800"; reportBtn.style.display = 'block'; 
-                } else {
-                    reportBtn.style.display = 'none'; 
-                    if (isCustom) {
-                        limitSourceText.innerHTML = "📝 本地記憶 (點擊修改)"; limitSourceText.style.color = "#ff9800";
-                    } else {
-                        if (hasLocalOverride) { limitSourceText.innerHTML = "手動設定<br><span style='color:#ff9800;font-size:0.7rem;'>已有📝 本地記憶<br>(點擊圖示修改)</span>"; limitSourceText.style.color = "#aaa"; } 
-                        else { limitSourceText.innerHTML = isAuto ? "OSM 自動" : "手動設定"; limitSourceText.style.color = isAuto ? "#4caf50" : "#aaa"; }
-                    }
-                }
+function updateVisualSign(val, isAuto, isCustom = false, isDefault = false, hasLocalOverride = false) {
+    if (val && val > 0) {
+        visualLimit.textContent = val; visualLimit.classList.remove('unknown');
+        if (isDefault) {
+            limitSourceText.innerHTML = "⚠️ 預設 (無資)"; limitSourceText.style.color = "#ff9800"; reportBtn.style.display = 'block';
+        } else {
+            reportBtn.style.display = 'none';
+            if (isCustom) {
+                limitSourceText.innerHTML = "📝 本地記憶 (點擊修改)"; limitSourceText.style.color = "#ff9800";
             } else {
-                visualLimit.textContent = "?"; visualLimit.classList.add('unknown'); limitSourceText.innerHTML = "⚠️ 無速限資料"; limitSourceText.style.color = "#ff3b30"; reportBtn.style.display = 'block';
+                if (hasLocalOverride) { limitSourceText.innerHTML = "手動設定<br><span style='color:#ff9800;font-size:0.7rem;'>已有📝 本地記憶<br>(點擊圖示修改)</span>"; limitSourceText.style.color = "#aaa"; }
+                else { limitSourceText.innerHTML = isAuto ? "OSM 自動" : "手動設定"; limitSourceText.style.color = isAuto ? "#4caf50" : "#aaa"; }
             }
         }
+    } else {
+        visualLimit.textContent = "?"; visualLimit.classList.add('unknown'); limitSourceText.innerHTML = "⚠️ 無速限資料"; limitSourceText.style.color = "#ff3b30"; reportBtn.style.display = 'block';
+    }
+}
 
-        // [手機語音修復] 
-        function speak(text) {
-            if (!synth) return;
-            synth.cancel(); // 重要：先取消之前的，避免卡住
-            const u = new SpeechSynthesisUtterance(text);
-            u.lang = 'zh-TW';
-            u.rate = 1.0; 
-            
-            // 強制抓取中文語音 (修正部分手機預設英文)
-            const voices = synth.getVoices();
-            const zhVoice = voices.find(v => v.lang.includes('zh-TW') || v.lang.includes('zh'));
-            if (zhVoice) u.voice = zhVoice;
+// [手機語音修復] 
+function speak(text) {
+    if (!synth) return;
+    synth.cancel(); // 重要：先取消之前的，避免卡住
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-TW';
+    u.rate = 1.0;
 
-            synth.speak(u);
-        }
+    // 強制抓取中文語音 (修正部分手機預設英文)
+    const voices = synth.getVoices();
+    const zhVoice = voices.find(v => v.lang.includes('zh-TW') || v.lang.includes('zh'));
+    if (zhVoice) u.voice = zhVoice;
 
-        function handleError(error) { statusDiv.textContent = "❌ GPS 訊號遺失"; locationDisplay.textContent = "GPS 遺失"; }
-        
-        // PiP Logic
-        function updatePiP(currentSpeed, limit) {
-            pipCtx.fillStyle = '#000000'; pipCtx.fillRect(0, 0, 512, 512);
-            const baseLimit = parseInt(limit) || 0;
-            let bgColor = '#000000';
-            if (isMonitoring) {
-                if (currentSpeed > baseLimit + TOLERANCE) bgColor = '#b71c1c'; 
-                else if (currentSpeed > baseLimit + TOLERANCE - PRE_WARNING_BUFFER) bgColor = '#fbc02d'; 
-            }
-            if (bgColor !== '#000000') { pipCtx.fillStyle = bgColor; pipCtx.fillRect(0, 0, 512, 512); }
-            pipCtx.fillStyle = (bgColor === '#b71c1c') ? '#fff' : (bgColor === '#fbc02d' ? '#000' : '#0f0');
-            pipCtx.font = 'bold 250px Arial'; pipCtx.textAlign = 'center'; pipCtx.textBaseline = 'middle';
-            pipCtx.fillText(Math.round(currentSpeed), 256, 200);
-            pipCtx.beginPath(); pipCtx.arc(256, 400, 70, 0, 2 * Math.PI); pipCtx.fillStyle = '#fff'; pipCtx.fill();
-            pipCtx.lineWidth = 10; pipCtx.strokeStyle = '#cc0000'; pipCtx.stroke();
-            pipCtx.fillStyle = '#000'; pipCtx.font = 'bold 60px Arial'; pipCtx.fillText(baseLimit, 256, 403);
-        }
+    synth.speak(u);
+}
+
+function handleError(error) { statusDiv.textContent = "❌ GPS 訊號遺失"; locationDisplay.textContent = "GPS 遺失"; }
+
+// PiP Logic
+function updatePiP(currentSpeed, limit) {
+    pipCtx.fillStyle = '#000000'; pipCtx.fillRect(0, 0, 512, 512);
+    const baseLimit = parseInt(limit) || 0;
+    let bgColor = '#000000';
+    if (isMonitoring) {
+        if (currentSpeed > baseLimit + TOLERANCE) bgColor = '#b71c1c';
+        else if (currentSpeed > baseLimit + TOLERANCE - PRE_WARNING_BUFFER) bgColor = '#fbc02d';
+    }
+    if (bgColor !== '#000000') { pipCtx.fillStyle = bgColor; pipCtx.fillRect(0, 0, 512, 512); }
+    pipCtx.fillStyle = (bgColor === '#b71c1c') ? '#fff' : (bgColor === '#fbc02d' ? '#000' : '#0f0');
+    pipCtx.font = 'bold 250px Arial'; pipCtx.textAlign = 'center'; pipCtx.textBaseline = 'middle';
+    pipCtx.fillText(Math.round(currentSpeed), 256, 200);
+    pipCtx.beginPath(); pipCtx.arc(256, 400, 70, 0, 2 * Math.PI); pipCtx.fillStyle = '#fff'; pipCtx.fill();
+    pipCtx.lineWidth = 10; pipCtx.strokeStyle = '#cc0000'; pipCtx.stroke();
+    pipCtx.fillStyle = '#000'; pipCtx.font = 'bold 60px Arial'; pipCtx.fillText(baseLimit, 256, 403);
+}

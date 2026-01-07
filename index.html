@@ -84,7 +84,11 @@
 
     <div id="history-modal" class="modal-overlay">
         <div class="modal-container">
-            <div class="history-header"><span id="modal-title">行車紀錄</span><button class="close-btn" onclick="closeHistory()" style="color:#fff;font-size:1.5rem;">×</button></div>
+            <div class="history-header">
+                <span id="modal-title">行車紀錄</span>
+                <button id="history-clear-btn" class="clear-btn" style="display:none; margin-left:auto; margin-right:10px;">🗑️ 一鍵刪除</button>
+                <button class="close-btn" onclick="closeHistory()" style="color:#fff;font-size:1.5rem;">×</button>
+            </div>
             <div class="ad-container" style="margin: 10px; width: auto;"><span class="ad-label">贊助商廣告 (申請後顯示)</span></div>
             <div class="history-list" id="history-list"></div>
         </div>
