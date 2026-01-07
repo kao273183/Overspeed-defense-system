@@ -550,6 +550,9 @@ function stopActiveMonitoring() {
     if (wakeLock !== null) wakeLock.release(); silentAudio.pause(); saveTrip();
     isMonitoring = false; toggleBtn.textContent = "🚀 啟動偵測"; toggleBtn.classList.remove('active');
     body.classList.remove('danger'); body.classList.remove('warning'); statusDiv.textContent = "已暫停";
+
+    miniMapPath = [];
+    if (miniMapPolyline) { miniMapPolyline.setLatLngs([]); }
 }
 
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
