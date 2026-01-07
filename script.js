@@ -614,7 +614,20 @@ function updatePosition(position) {
 }
 
 function checkOverSpeed(currentSpeed) {
-    if (!isMonitoring) { body.classList.remove('danger', 'warning'); return; }
+
+    // Auto-hide Controls Logic
+    const controls = document.querySelector('.primary-controls');
+    if (isMonitoring && currentSpeed > 10) {
+        if (controls) controls.classList.add('dock-hidden');
+    } else if (currentSpeed < 8) { // Hysteresis
+        if (controls) controls.classList.remove('dock-hidden');
+    }
+
+    if (!isMonitoring) {
+        body.classList.remove('danger', 'warning');
+        if (controls) controls.classList.remove('dock-hidden'); // Always show when stopped
+        return;
+    }
     const baseLimit = parseFloat(limitInput.value);
     const alarmTrigger = baseLimit + TOLERANCE;
     const preWarningStart = alarmTrigger - PRE_WARNING_BUFFER;
