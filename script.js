@@ -251,9 +251,21 @@ function drawGauge(speed) {
 }
 
 function initMiniMap() {
-    miniMap = L.map('realtime-map', { zoomControl: false, attributionControl: false }).setView([25.0330, 121.5654], 18);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(miniMap);
-    if (currentMissingLat && currentMissingLon) { updateMiniMap(currentMissingLat, currentMissingLon); }
+    // [修改 1] 將預設縮放改成 20 (原本是 18)
+    miniMap = L.map('realtime-map', {
+        zoomControl: false,
+        attributionControl: false
+    }).setView([25.0330, 121.5654], 20);
+
+    // [修改 2] 設定 maxNativeZoom 與 maxZoom
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        maxNativeZoom: 19,  // 告訴系統：圖資原本最清楚只到 19 層
+        maxZoom: 22         // 告訴系統：但允許你數位放大到 22 層 (看起來更近)
+    }).addTo(miniMap);
+
+    if (currentMissingLat && currentMissingLon) {
+        updateMiniMap(currentMissingLat, currentMissingLon);
+    }
 }
 
 function updateMiniMap(lat, lon) {
@@ -265,7 +277,7 @@ function updateMiniMap(lat, lon) {
     if (miniMapPath.length > 500) miniMapPath.shift();
     if (!miniMapPolyline) { miniMapPolyline = L.polyline(miniMapPath, { color: '#00e676', weight: 3 }).addTo(miniMap); }
     else { miniMapPolyline.setLatLngs(miniMapPath); }
-    miniMap.setView(latlng, 18); miniMap.invalidateSize();
+    miniMap.setView(latlng, 20); miniMap.invalidateSize();
 }
 
 window.toggleMenu = function () {
@@ -613,8 +625,28 @@ function updatePosition(position) {
                         clearTimeout(timeoutId); if (!response.ok) throw new Error("Server busy");
                         const data = await response.json();
                         if (data.elements && data.elements.length > 0) {
-                            let maxspeed = data.elements[0].tags.maxspeed; let limitNumber = parseInt(maxspeed);
-                            if (!isNaN(limitNumber)) { limitInput.value = limitNumber; updateVisualSign(limitNumber, true); updateThresholdDisplay(); updatePiP(0, limitNumber); success = true; }
+                            // Smart Selection Logic
+                            let bestLimit = 0;
+                            const roads = data.elements.map(e => parseInt(e.tags.maxspeed)).filter(L => !isNaN(L));
+
+                            if (roads.length > 0) {
+                                if (speedKmh > 60) {
+                                    // High Speed Mode: Prioritize highest limit (Highway > Ramp/Service)
+                                    bestLimit = Math.max(...roads);
+                                } else {
+                                    // Low Speed Mode: Default to nearest (first result usually)
+                                    // Or nearest to current speed? Let's stick to first for now but filter weird zeros
+                                    bestLimit = roads[0];
+                                }
+                            }
+
+                            if (bestLimit > 0) {
+                                limitInput.value = bestLimit;
+                                updateVisualSign(bestLimit, true);
+                                updateThresholdDisplay();
+                                updatePiP(0, bestLimit);
+                                success = true;
+                            }
                         }
                     } catch (e) { console.warn("Switching server..."); }
                 }

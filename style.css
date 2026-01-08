@@ -1082,3 +1082,18 @@ input[type="text"] {
         font-size: 0.9rem;
     }
 }
+
+
+/* 高對比黑白模式 (修正版) */
+#realtime-map .leaflet-tile-pane {
+    /* 1. invert(100%): 反轉顏色 (白底變黑底，黑字變白字)
+       2. grayscale(100%): 去除顏色，變成純黑白
+       3. brightness(350%): 【關鍵】大幅提亮！把消失的道路線條「拉」回來
+       4. contrast(150%): 最後稍微加強對比，讓文字清晰
+    */
+    filter: invert(100%) grayscale(100%) brightness(350%) contrast(150%);
+}
+
+#realtime-map {
+    background: #000;
+}
