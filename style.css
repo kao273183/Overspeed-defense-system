@@ -205,8 +205,8 @@ body.warning .extra-info {
     display: block;
 }
 
-#speed-display::after {
-    content: 'km/h';
+/* Unit Display Styles for Portrait (Default) */
+.unit {
     display: block;
     font-size: 1.5rem;
     color: #0f0;
@@ -215,6 +215,8 @@ body.warning .extra-info {
     margin-top: -10px;
     text-shadow: none;
     opacity: 0.8;
+    font-family: 'Arial Black', sans-serif;
+    z-index: 10;
 }
 
 /* 指針時速表 */
@@ -227,7 +229,8 @@ body.warning .extra-info {
     z-index: 10;
 }
 
-body.theme-analog #speed-display {
+body.theme-analog #speed-display,
+body.theme-analog .unit {
     display: none;
 }
 
@@ -240,7 +243,7 @@ body.danger #speed-display {
     text-shadow: none;
 }
 
-body.danger #speed-display::after {
+body.danger .unit {
     color: #fff;
 }
 
@@ -366,12 +369,8 @@ body.warning .threshold-badge {
 }
 
 #realtime-map {
-    width: 150%;
-    height: 150%;
-    top: -25%;
-    left: -25%;
-    position: absolute;
-    transition: transform 0.5s linear;
+    width: 100%;
+    height: 100%;
 }
 
 /* Maximized Mode Transitions */
