@@ -1097,3 +1097,81 @@ input[type="text"] {
 #realtime-map {
     background: #000;
 }
+
+/* --- HUD 模式專屬優化 (貼在 style.css 最下方) --- */
+
+/* 1. 預設隱藏「退出 HUD」按鈕 */
+#exit-hud-btn {
+    display: none;
+}
+
+/* 2. 當進入 HUD 模式時... */
+body.hud-mode #exit-hud-btn {
+    display: block;
+    /* 顯示退出按鈕 */
+    position: absolute;
+    bottom: 20px;
+    /* 放在底部 (投射時會在上方) */
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid #fff;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 1rem;
+    z-index: 1000;
+    cursor: pointer;
+}
+
+/* 3. 隱藏所有干擾視線的邊緣介面 */
+body.hud-mode #menu-btn,
+/* 左上選單 */
+body.hud-mode #minimap-btn,
+/* 地圖開關 */
+body.hud-mode #clock,
+/* 右上時鐘 */
+body.hud-mode #location-display,
+/* 路名顯示 */
+body.hud-mode .extra-info,
+/* 高度/羅盤 */
+body.hud-mode .primary-controls,
+/* 底部控制面板 */
+body.hud-mode #report-btn
+
+/* 標記按鈕 */
+    {
+    display: none !important;
+}
+
+/* 4. 調整版面，讓時速表在畫面正中間 */
+body.hud-mode .main-container {
+    padding: 0;
+    justify-content: center;
+}
+
+body.hud-mode .dashboard {
+    margin: 0;
+    gap: 20px;
+}
+
+body.hud-mode .dashboard.map-active {
+    /* 強制將時速與速限推到最左右兩邊 */
+    justify-content: space-between !important;
+
+    /* 移除原本 HUD 模式設定的間距限制 */
+    gap: 0 !important;
+
+    /* 確保佔滿寬度 */
+    width: 100%;
+
+    /* 稍微留點邊距，不要貼死螢幕邊緣 */
+    padding-left: 80px;
+    padding-right: 80px;
+}
+
+/* 額外優化：讓地圖在 HUD 模式下稍微放大一點，利用中間騰出的空間 */
+body.hud-mode .dashboard.map-active #mini-map-overlay {
+    width: 45vw;
+    /* 原本是 35vw，稍微加寬 */
+}
