@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speed Defense System - 您的終極駕駛助手</title>
+    <meta name="description" content="Speed Defense System 是一款專為駕駛設計的防禦性駕駛輔助 App，提供即時速限提醒、缺漏標記回報等功能。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+TC:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Icon -->
+    <link rel="icon" type="image/png" href="../assets/icon/app_icon.png">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">Speed Defense System</h1>
+            <div class="nav-links">
+                <a href="#features" class="nav-link">功能特色</a>
+                <a href="#gallery" class="nav-link">App 預覽</a>
+                <a href="#join-beta" class="nav-cta">立即加入</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-tagline">🚀 現正開放內測中</div>
+                <h2 class="hero-title">您的智慧駕駛<br>安全副駕</h2>
+                <p class="hero-subtitle">即時速限偵測 · 缺漏標記回報 · 極簡深色介面<br>讓每一次駕駛都更安全、更安心</p>
+                <div class="hero-buttons">
+                    <a href="#join-beta" class="btn btn-primary"
+                        onclick="document.getElementById('join-beta').scrollIntoView(); return false;">立即加入內測</a>
+                    <a href="#features" class="btn btn-secondary">了解更多</a>
+                </div>
+            </div>
+        </div>
+        <div class="scroll-indicator" onclick="document.getElementById('join-beta').scrollIntoView()">
+            ⌄
+        </div>
+    </header>
+
+    <section id="join-beta" class="join-beta">
+        <div class="container">
+            <h3 class="section-title">加入 Google 內測計畫</h3>
+            <p class="section-subtitle">目前 App 處於內測階段，請依照以下步驟搶先體驗</p>
+
+            <div class="join-cards">
+                <!-- Step 1 -->
+                <div class="join-card">
+                    <div class="step-badge">1</div>
+                    <div>
+                        <h4>加入 Google Group</h4>
+                        <p>點擊下方按鈕加入我們的測試小組，取得下載權限。加入後即可獲得 App 的完整使用權限。</p>
+                    </div>
+                    <a href="https://groups.google.com/g/nokou" target="_blank" class="btn-block btn-group">
+                        <span style="font-size: 1.2em; vertical-align: middle;">👥</span> 加入 Google Group
+                    </a>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="join-card">
+                    <div class="step-badge">2</div>
+                    <div>
+                        <h4>下載應用程式</h4>
+                        <p>加入群組後，前往 Google Play 商店下載安裝。立即開始您的智慧駕駛體驗。</p>
+                    </div>
+                    <a href="https://play.google.com/store/apps/details?id=com.minikao.speed_defense_system"
+                        target="_blank" class="btn-block btn-play">
+                        <span style="font-size: 1.2em;">▶</span> Google Play 下載
+                    </a>
+                </div>
+            </div>
+
+            <div class="ios-notice">
+                <p><span>🍎</span> iOS 版本開發中，敬請期待...</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="container">
+            <h3 class="section-title">核心功能</h3>
+            <p class="section-subtitle">結合先進 AI 視覺與社群回報，打造最懂台灣道路的駕駛系統。</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="icon">🚀</div>
+                    <h4>精準速限偵測</h4>
+                    <p>利用先進的影像辨識技術，即時偵測道路速限標誌，避免超速罰單。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">📝</div>
+                    <h4>缺漏標記回報</h4>
+                    <p>發現地圖資料缺漏？一鍵標記並回報，共同完善駕駛與地圖體驗。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🎨</div>
+                    <h4>極簡深色介面</h4>
+                    <p>專為夜間駕駛設計的深色模式，降低視覺疲勞，資訊清晰易讀。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- App Gallery Section -->
+    <section id="gallery" class="gallery">
+        <div class="container">
+            <h3 class="section-title" style="color: white">App 畫面預覽</h3>
+            <div class="gallery-grid">
+                <div class="gallery-item">
+                    <img src="images/speedometer.png" alt="儀表板畫面" loading="lazy">
+                    <p class="caption">精簡儀表板</p>
+                </div>
+                <div class="gallery-item">
+                    <img src="images/menu_drawer.png" alt="功能選單畫面" loading="lazy">
+                    <p class="caption">功能選單</p>
+                </div>
+                <div class="gallery-item">
+                    <img src="images/screenshot_missing_report.png" alt="缺漏標記回報畫面" loading="lazy">
+                    <p class="caption">缺漏標記回報</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Speed Defense System. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+
+</html>
