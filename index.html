@@ -1,129 +1,345 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>別扣我 - 您的智慧駕駛副駕</title>
-    <meta name="description" content="別扣我 (Speed Defense System) 是一款專為駕駛設計的防禦性駕駛輔助 App，提供即時速限提醒、缺漏標記回報等功能。">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+TC:wght@400;700&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <!-- Icon -->
-    <link rel="icon" type="image/png" href="../assets/icon/app_icon.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>別扣我 - 你的行動儀表板</title>
+  <meta name="description" content="別扣我 — 精準 GPS 即時測速，自動偵測限速，超速前語音預警。iOS 與 Android 免費下載。">
+  <meta property="og:title" content="別扣我 - 你的行動儀表板">
+  <meta property="og:description" content="精準 GPS 即時測速，自動偵測限速，超速前語音預警。">
+  <meta property="og:image" content="images/screen1.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="../assets/icon/app_icon.png">
 </head>
-
 <body>
-    <nav class="navbar">
-        <div class="container">
-            <a href="#" class="logo">
-                <img src="images/logo.png" alt="Logo" class="logo-img">
-                別扣我
-            </a>
-            <div class="nav-links">
-                <a href="#features" class="nav-link">功能特色</a>
-                <a href="#gallery" class="nav-link">App 預覽</a>
-                <a href="#download" class="nav-cta">免費下載</a>
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="container nav-inner">
+      <a href="#" class="logo">
+        <img src="images/logo.png" alt="別扣我" class="logo-img">
+        別扣我
+      </a>
+      <div class="nav-links">
+        <a href="#features" class="nav-link">功能</a>
+        <a href="#gallery" class="nav-link">預覽</a>
+        <a href="#download" class="nav-link">下載</a>
+      </div>
+      <a href="#download" class="nav-cta">免費下載</a>
+      <button class="hamburger" id="hamburger" aria-label="選單">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <div class="mobile-menu" id="mobileMenu">
+      <a href="#features" class="mobile-link">功能特色</a>
+      <a href="#gallery" class="mobile-link">App 預覽</a>
+      <a href="#download" class="mobile-link">立即下載</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-bg-glow"></div>
+    <div class="container hero-inner">
+
+      <div class="hero-content" data-aos>
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          iOS &amp; Android 正式上架
+        </div>
+        <h1 class="hero-title">
+          開車不超速<br>
+          <span class="highlight">別扣我</span> 幫你顧
+        </h1>
+        <p class="hero-subtitle">
+          精準 GPS 即時測速・自動偵測限速・超速前語音預警<br>
+          讓每一次上路都更安全、更安心
+        </p>
+        <div class="hero-buttons">
+          <a href="https://apps.apple.com/us/app/%E5%88%A5%E6%89%A3%E6%88%91-%E4%BD%A0%E7%9A%84%E8%A1%8C%E5%8B%95%E5%84%80%E8%A1%A8%E6%9D%BF/id6758271584"
+             target="_blank" class="store-btn store-btn-apple">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            <div class="store-btn-text">
+              <span class="store-btn-sub">下載於</span>
+              <span class="store-btn-title">App Store</span>
             </div>
-        </div>
-    </nav>
-
-    <header class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <div class="hero-tagline">🚀 Google Play 正式上架</div>
-                <h2 class="hero-title">您的智慧駕駛<br>安全副駕</h2>
-                <p class="hero-subtitle">即時速限偵測 · 缺漏標記回報 · 極簡深色介面<br>讓每一次駕駛都更安全、更安心</p>
-                <div class="hero-buttons">
-                    <a href="#download" class="btn btn-primary"
-                        onclick="document.getElementById('download').scrollIntoView(); return false;">立即下載 App</a>
-                    <a href="#features" class="btn btn-secondary">了解更多</a>
-                </div>
+          </a>
+          <a href="https://play.google.com/store/apps/details?id=com.minikao.speed_defense_system&hl=zh_TW"
+             target="_blank" class="store-btn store-btn-play">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.76c.35.2.74.24 1.12.1l12.5-7.21-2.88-2.89L3.18 23.76zm-1.7-20.7C1.18 3.4 1 3.8 1 4.28v15.44c0 .48.18.88.48 1.22l.06.06 8.65-8.65v-.2L1.54 3.1l-.06.06zM20.37 9.93l-2.54-1.47-3.21 3.21 3.21 3.21 2.56-1.48c.73-.42.73-1.1 0-1.52l-.02.05zM4.3.14L16.8 7.35l-2.88 2.89L3.18.24C3.54.1 3.94.14 4.3.14z"/></svg>
+            <div class="store-btn-text">
+              <span class="store-btn-sub">下載於</span>
+              <span class="store-btn-title">Google Play</span>
             </div>
+          </a>
         </div>
-        <div class="scroll-indicator" onclick="document.getElementById('download').scrollIntoView()">
-            ⌄
-        </div>
-    </header>
+        <p class="hero-note">免費使用 · iOS 15+ · Android · 台灣道路最佳化</p>
+      </div>
 
-    <section id="download" class="join-beta">
-        <div class="container">
-            <h3 class="section-title">立即下載</h3>
-            <p class="section-subtitle">Google Play 商店正式上架，立即體驗智慧駕駛輔助</p>
-
-            <div class="join-cards" style="justify-content: center;">
-                <!-- Download Card -->
-                <div class="join-card" style="max-width: 500px; width: 100%;">
-                    <div>
-                        <h4>Android 版本</h4>
-                        <p>前往 Google Play 商店免費下載安裝，立即開始您的智慧駕駛體驗。</p>
-                    </div>
-                    <a href="https://play.google.com/store/apps/details?id=com.minikao.speed_defense_system&hl=zh_TW"
-                        target="_blank" class="btn-block btn-play">
-                        <span style="font-size: 1.2em;">▶</span> Google Play 下載
-                    </a>
-                </div>
+      <!-- Speedometer Mockup -->
+      <div class="hero-mockup" data-aos data-aos-delay="200">
+        <div class="phone-frame">
+          <div class="phone-screen">
+            <div class="speedo-ring">
+              <div class="speedo-inner">
+                <div class="speedo-speed" id="speedNum">72</div>
+                <div class="speedo-unit">km/h</div>
+              </div>
+              <div class="speedo-limit">
+                <div class="speedo-limit-num">80</div>
+                <div class="speedo-limit-label">限速</div>
+              </div>
             </div>
+            <div class="speedo-status safe" id="speedStatus">安全行駛中</div>
+          </div>
+        </div>
+        <div class="phone-glow"></div>
+      </div>
 
-            <div class="ios-notice">
-                <p><span>🍎</span> iOS 版本開發中，敬請期待...</p>
+    </div>
+    <div class="hero-scroll" onclick="document.getElementById('stats').scrollIntoView({behavior:'smooth'})">
+      <div class="scroll-arrow"></div>
+    </div>
+  </header>
+
+  <!-- STATS -->
+  <section class="stats-section" id="stats">
+    <div class="container stats-grid">
+      <div class="stat-item" data-aos>
+        <div class="stat-num">0.1<span>s</span></div>
+        <div class="stat-label">GPS 更新頻率</div>
+      </div>
+      <div class="stat-item" data-aos>
+        <div class="stat-num">OSM</div>
+        <div class="stat-label">開放街圖限速資料庫</div>
+      </div>
+      <div class="stat-item" data-aos>
+        <div class="stat-num">2<span>+</span></div>
+        <div class="stat-label">支援平台</div>
+      </div>
+      <div class="stat-item" data-aos>
+        <div class="stat-num">背景</div>
+        <div class="stat-label">持續偵測不中斷</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features" class="features">
+    <div class="container">
+      <div class="section-header" data-aos>
+        <div class="section-label">核心功能</div>
+        <h2 class="section-title">開車必備，一目了然</h2>
+        <p class="section-subtitle">整合 GPS 測速、限速偵測、行程紀錄於一身，讓每次出門都更安心。</p>
+      </div>
+      <div class="feature-grid">
+        <div class="feature-card" data-aos>
+          <div class="feature-icon-wrap orange"><span>🚨</span></div>
+          <h4>超速語音警告</h4>
+          <p>接近限速前主動語音提醒，結合 TTS 與自訂提示音，即使螢幕朝下也聽得到。</p>
+        </div>
+        <div class="feature-card" data-aos>
+          <div class="feature-icon-wrap green"><span>🛣️</span></div>
+          <h4>自動限速偵測</h4>
+          <p>結合 OpenStreetMap 即時偵測當前路段限速，切換道路自動更新，無需手動設定。</p>
+        </div>
+        <div class="feature-card" data-aos>
+          <div class="feature-icon-wrap blue"><span>🗺️</span></div>
+          <h4>全螢幕地圖模式</h4>
+          <p>時速與限速 HUD 可自由拖曳、縮放，搭配夜間高對比濾鏡，視野更清晰。</p>
+        </div>
+        <div class="feature-card" data-aos>
+          <div class="feature-icon-wrap purple"><span>📊</span></div>
+          <h4>行程紀錄與統計</h4>
+          <p>自動記錄距離、時長、最高時速、平均時速，雲端同步多裝置共享歷史。</p>
+        </div>
+        <div class="feature-card" data-aos>
+          <div class="feature-icon-wrap orange"><span>⛽</span></div>
+          <h4>油耗 / 電耗追蹤</h4>
+          <p>支援燃油與電動車，追蹤每次加油充電消費，計算平均油耗幫你省油費。</p>
+        </div>
+        <div class="feature-card" data-aos>
+          <div class="feature-icon-wrap green"><span>🎵</span></div>
+          <h4>音樂播放不中斷</h4>
+          <p>與 Apple Music、Spotify 完美並存，語音警告插播後自動恢復，不干擾。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GALLERY -->
+  <section id="gallery" class="gallery">
+    <div class="container">
+      <div class="section-header" data-aos>
+        <div class="section-label">App 預覽</div>
+        <h2 class="section-title" style="color:#fff">親眼看看 App 介面</h2>
+        <p class="section-subtitle" style="color:#666">深色介面設計，白天夜晚都清晰易讀</p>
+      </div>
+      <!-- 直向 3 張 -->
+      <div class="gallery-portrait-row">
+        <div class="gallery-item" data-aos>
+          <div class="gallery-phone">
+            <img src="images/screen1.png" alt="指針儀表板" loading="lazy">
+          </div>
+          <p class="caption">指針儀表板</p>
+        </div>
+        <div class="gallery-item" data-aos>
+          <div class="gallery-phone gallery-phone-large">
+            <img src="images/screen2.png" alt="功能選單" loading="lazy">
+          </div>
+          <p class="caption">功能選單</p>
+        </div>
+        <div class="gallery-item" data-aos>
+          <div class="gallery-phone">
+            <img src="images/screen3.png" alt="車輛儀表板" loading="lazy">
+          </div>
+          <p class="caption">車輛儀表板</p>
+        </div>
+      </div>
+      <!-- 橫向 2 張 -->
+      <div class="gallery-landscape-row">
+        <div class="gallery-landscape-item" data-aos>
+          <div class="gallery-landscape-frame">
+            <img src="images/screen4.png" alt="橫向模式" loading="lazy">
+          </div>
+          <p class="caption">橫向模式</p>
+        </div>
+        <div class="gallery-landscape-item" data-aos>
+          <div class="gallery-landscape-frame">
+            <img src="images/screen5.png" alt="地圖模式" loading="lazy">
+          </div>
+          <p class="caption">地圖模式</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PREMIUM -->
+  <section class="premium">
+    <div class="container">
+      <div class="section-header" data-aos>
+        <div class="section-label">進階功能</div>
+        <h2 class="section-title">解鎖更多駕駛助手</h2>
+        <p class="section-subtitle">升級 Premium，享受完整的智慧行車體驗。</p>
+      </div>
+      <div class="premium-grid">
+        <div class="premium-card" data-aos>
+          <div class="premium-icon">🅿️</div>
+          <h4>附近停車場</h4>
+          <p>即時查詢周邊停車場，導航前往一鍵搞定。</p>
+        </div>
+        <div class="premium-card" data-aos>
+          <div class="premium-icon">⛽</div>
+          <h4>附近加油站</h4>
+          <p>地圖顯示中油站點，查看油品與營業時間。</p>
+        </div>
+        <div class="premium-card" data-aos>
+          <div class="premium-icon">🚗</div>
+          <h4>多車輛管理</h4>
+          <p>新增多台車輛，分別追蹤油耗與行程。</p>
+        </div>
+        <div class="premium-card" data-aos>
+          <div class="premium-icon">☁️</div>
+          <h4>雲端同步</h4>
+          <p>行程紀錄跨裝置同步，換手機資料不遺失。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DOWNLOAD -->
+  <section id="download" class="download">
+    <div class="container">
+      <div class="download-box" data-aos>
+        <div class="download-text">
+          <div class="section-label">立即下載</div>
+          <h2>現在就開始<br>安全駕駛之旅</h2>
+          <p>免費下載，iOS 與 Android 雙平台皆可使用</p>
+        </div>
+        <div class="download-btns">
+          <a href="https://apps.apple.com/us/app/%E5%88%A5%E6%89%A3%E6%88%91-%E4%BD%A0%E7%9A%84%E8%A1%8C%E5%8B%95%E5%84%80%E8%A1%A8%E6%9D%BF/id6758271584"
+             target="_blank" class="store-btn store-btn-apple">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            <div class="store-btn-text">
+              <span class="store-btn-sub">下載於</span>
+              <span class="store-btn-title">App Store</span>
             </div>
-        </div>
-    </section>
-
-    <section id="features" class="features">
-        <div class="container">
-            <h3 class="section-title">核心功能</h3>
-            <p class="section-subtitle">結合先進 AI 視覺與社群回報，打造最懂台灣道路的駕駛系統。</p>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <div class="icon">🚀</div>
-                    <h4>精準速限偵測</h4>
-                    <p>利用先進的影像辨識技術，即時偵測道路速限標誌，避免超速罰單。</p>
-                </div>
-                <div class="feature-card">
-                    <div class="icon">📝</div>
-                    <h4>缺漏標記回報</h4>
-                    <p>發現地圖資料缺漏？一鍵標記並回報，共同完善駕駛與地圖體驗。</p>
-                </div>
-                <div class="feature-card">
-                    <div class="icon">🎨</div>
-                    <h4>極簡深色介面</h4>
-                    <p>專為夜間駕駛設計的深色模式，降低視覺疲勞，資訊清晰易讀。</p>
-                </div>
+          </a>
+          <a href="https://play.google.com/store/apps/details?id=com.minikao.speed_defense_system&hl=zh_TW"
+             target="_blank" class="store-btn store-btn-play">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.76c.35.2.74.24 1.12.1l12.5-7.21-2.88-2.89L3.18 23.76zm-1.7-20.7C1.18 3.4 1 3.8 1 4.28v15.44c0 .48.18.88.48 1.22l.06.06 8.65-8.65v-.2L1.54 3.1l-.06.06zM20.37 9.93l-2.54-1.47-3.21 3.21 3.21 3.21 2.56-1.48c.73-.42.73-1.1 0-1.52l-.02.05zM4.3.14L16.8 7.35l-2.88 2.89L3.18.24C3.54.1 3.94.14 4.3.14z"/></svg>
+            <div class="store-btn-text">
+              <span class="store-btn-sub">下載於</span>
+              <span class="store-btn-title">Google Play</span>
             </div>
+          </a>
         </div>
-    </section>
+      </div>
+    </div>
+  </section>
 
-    <!-- App Gallery Section -->
-    <section id="gallery" class="gallery">
-        <div class="container">
-            <h3 class="section-title" style="color: white">App 畫面預覽</h3>
-            <div class="gallery-grid">
-                <div class="gallery-item">
-                    <img src="images/speedometer.png" alt="儀表板畫面" loading="lazy">
-                    <p class="caption">精簡儀表板</p>
-                </div>
-                <div class="gallery-item">
-                    <img src="images/menu_drawer.png" alt="功能選單畫面" loading="lazy">
-                    <p class="caption">功能選單</p>
-                </div>
-                <div class="gallery-item">
-                    <img src="images/screenshot_missing_report.png" alt="缺漏標記回報畫面" loading="lazy">
-                    <p class="caption">缺漏標記回報</p>
-                </div>
-            </div>
-        </div>
-    </section>
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img src="images/logo.png" alt="別扣我" class="logo-img">
+        <span class="footer-name">別扣我</span>
+      </div>
+      <div class="footer-links">
+        <a href="https://hackmd.io/@RK5ElnRYSM2GxWnawj_-SA/HJvHrsmtbg" target="_blank">隱私政策</a>
+        <a href="https://hackmd.io/@RK5ElnRYSM2GxWnawj_-SA/BJL9BimYbg" target="_blank">服務條款</a>
+        <a href="https://apps.apple.com/us/app/%E5%88%A5%E6%89%A3%E6%88%91-%E4%BD%A0%E7%9A%84%E8%A1%8C%E5%8B%95%E5%84%80%E8%A1%A8%E6%9D%BF/id6758271584" target="_blank">App Store</a>
+        <a href="https://play.google.com/store/apps/details?id=com.minikao.speed_defense_system&hl=zh_TW" target="_blank">Google Play</a>
+      </div>
+      <p class="footer-copy">&copy; 2026 別扣我 · Speed Defense System · All rights reserved.</p>
+    </div>
+  </footer>
 
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2026 別扣我 (Speed Defense System). All rights reserved.</p>
-        </div>
-    </footer>
+  <script>
+    // Navbar scroll
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      navbar.classList.toggle('scrolled', window.scrollY > 40);
+    });
+
+    // Hamburger
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobileMenu');
+    hamburger.addEventListener('click', () => {
+      hamburger.classList.toggle('open');
+      mobileMenu.classList.toggle('open');
+    });
+    document.querySelectorAll('.mobile-link').forEach(link => {
+      link.addEventListener('click', () => {
+        hamburger.classList.remove('open');
+        mobileMenu.classList.remove('open');
+      });
+    });
+
+    // Scroll animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('aos-visible'); });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('[data-aos]').forEach(el => observer.observe(el));
+
+    // Speedometer
+    let speed = 72, dir = 1;
+    setInterval(() => {
+      speed += dir * (Math.random() * 2);
+      if (speed > 78) dir = -1;
+      if (speed < 65) dir = 1;
+      const el = document.getElementById('speedNum');
+      const st = document.getElementById('speedStatus');
+      if (el) el.textContent = Math.round(speed);
+      if (st) {
+        if (speed > 76) { st.textContent = '⚠️ 接近速限'; st.className = 'speedo-status warn'; }
+        else { st.textContent = '✓ 安全行駛中'; st.className = 'speedo-status safe'; }
+      }
+    }, 900);
+  </script>
+
 </body>
-
 </html>
