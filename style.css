@@ -164,18 +164,32 @@ img { max-width: 100%; display: block; }
 .mobile-link:hover { color: var(--text); background: rgba(255,255,255,0.03); }
 
 /* ── Store Badges (Official) ───────────────── */
+/*
+ * Apple: min 40px height, clear space = 1/4 badge height (~13px), black badge first
+ * Google Play: use official "Get it on Google Play" badge only, no color changes
+ */
+.hero-buttons,
+.download-btns {
+  align-items: center; /* 對齊兩個不同高度的 badge */
+}
 .badge-link {
   display: inline-block;
+  /* Apple 要求四周留白 1/4 badge 高度 ≈ 13px */
+  padding: 6px;
   transition: transform 0.2s, opacity 0.2s;
+  border-radius: 8px;
 }
-.badge-link:hover { transform: translateY(-2px); opacity: 0.9; }
+.badge-link:hover { transform: translateY(-2px); opacity: 0.88; }
 .badge-img {
   display: block;
-  height: 52px;
+  height: 48px; /* 符合 Apple 最小 40px，留有餘裕 */
   width: auto;
 }
-/* Google Play badge has extra padding built-in, compensate visually */
-.badge-google { height: 76px; margin: -12px 0; }
+/*
+ * Google Play PNG 官方圖檔內建透明留白（約 15% 上下）
+ * 加大高度讓視覺上與 App Store badge 等高
+ */
+.badge-google { height: 72px; }
 
 /* ── Hero ──────────────────────────────────── */
 .hero {
